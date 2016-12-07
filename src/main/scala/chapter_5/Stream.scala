@@ -61,11 +61,25 @@ sealed trait Stream[+A] {
     foldRight(true)((a, b) => p(a) && b)
 
   def takeWhileUsingFR(f: A => Boolean): Stream[A] =
-    foldRight(Empty: Stream[A])((a, b) => if (f(a)) cons(a, b) else empty)
+    foldRight(empty[A])((a, b) => if (f(a)) cons(a, b) else empty)
 
   def headOptionUsingFR: Option[A] =
     foldRight(None: Option[A])((a, b) => Option(a))
 
+  def map[B](f: A => B): Stream[B] =
+    foldRight(empty[B])((a, b) => cons(f(a), b))
+
+  def flatMap[B](f: A => Stream[B]): Stream[B] =
+    foldRight(empty[B])((a, b) => f(a).append(b))
+
+  def filter(f: A => Boolean): Stream[A] =
+    foldRight(empty[A])((a, b) => if (f(a)) cons(a, b) else b)
+
+  def append[AA >: A](as: Stream[AA]): Stream[AA] =
+    foldRight(as)(cons[AA](_, _))
+
+  def find(p: A => Boolean): Option[A] =
+    filter(p).headOption
 }
 
 case object Empty extends Stream[Nothing]
@@ -85,3 +99,5 @@ object Stream {
   def apply[A](as: A*): Stream[A] =
     if (as.isEmpty) empty else cons(as.head, apply(as.tail: _*))
 }
+
+map, flatMap, filter, append, find

@@ -5,11 +5,10 @@ import org.scalatest.{FlatSpec, Matchers}
 class StreamSpec extends FlatSpec with Matchers {
 
   def f = {
-    println("Hello: 1")
     12
   }
+
   def s = {
-    println("Hello: 2")
     13
   }
 
@@ -58,4 +57,38 @@ class StreamSpec extends FlatSpec with Matchers {
     Empty.headOptionUsingFR shouldBe None
   }
 
+  "Stream.map" should "map all the elements of stream" in {
+    stream.map(_ + 2).toList shouldBe List(14, 15)
+    Empty.map(identity) shouldBe Empty
+    stream.headOptionUsingFR shouldBe Some(f)
+    Empty.headOptionUsingFR shouldBe None
+  }
+
+  "Stream.filter" should "filter elements of the stream" in {
+    stream.filter(_ % 2 == 0).toList shouldBe List(12)
+    stream.filter(_ => false) shouldBe Empty
+    stream.filter(_ => true).toList shouldBe stream.toList
+    Empty.filter(_ => true) shouldBe Empty
+    Empty.filter(_ => false) shouldBe Empty
+  }
+
+  "Stream.flatMap" should "flat map all the elements" in {
+    stream.flatMap(x => Stream(x, x)).toList shouldBe List(12, 12, 13, 13)
+    stream.flatMap(x => Empty) shouldBe Empty
+    Stream.empty[Int].flatMap(x => Stream(x)) shouldBe Empty
+  }
+
+  "Stream.append" should "append one stream to another" in {
+    stream.append(Stream(1, 2, 3)).toList shouldBe stream.toList.++(List(1, 2, 3))
+    stream.append(Empty).toList shouldBe stream.toList
+    Empty.append(Stream(1, 2, 3)).toList shouldBe List(1, 2, 3)
+  }
+
+  "Stream.find" should "find an element in the stream" in {
+    stream.find(_ % 2 == 0) shouldBe Some(12)
+    stream.find(_ % 2 != 0) shouldBe Some(13)
+    stream.find(_ => false) shouldBe None
+    Empty.find(_ => true) shouldBe None
+
+  }
 }

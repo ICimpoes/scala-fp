@@ -1,5 +1,7 @@
 package chapter_5
 
+import scala.annotation.tailrec
+
 
 sealed trait Stream[+A] {
 
@@ -98,4 +100,24 @@ object Stream {
 
   def apply[A](as: A*): Stream[A] =
     if (as.isEmpty) empty else cons(as.head, apply(as.tail: _*))
+
+  def constant[A](elem: A) = {
+    lazy val s: Stream[A] = cons(elem, s)
+    s
+  }
+
+  def from(n: Int): Stream[Int] =
+    cons(n, from(n + 1))
+
+  def fibs(n: Int = 0, m: Int = 1): Stream[Int] =
+    cons(n, fibs(m, n + m))
+
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = {
+    f(z) match {
+      case Some((a, s)) =>
+        cons(a, unfold(s)(f))
+      case None =>
+        empty[A]
+    }
+  }
 }

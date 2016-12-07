@@ -99,5 +99,3 @@ object Stream {
   def apply[A](as: A*): Stream[A] =
     if (as.isEmpty) empty else cons(as.head, apply(as.tail: _*))
 }
-
-map, flatMap, filter, append, find

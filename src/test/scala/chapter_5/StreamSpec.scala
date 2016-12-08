@@ -24,6 +24,12 @@ class StreamSpec extends FlatSpec with Matchers {
     stream.take(1).toList shouldBe List(12)
     stream.take(0) shouldBe Empty
     Empty.take(1) shouldBe Empty
+
+    stream.takeUsingUnfold(2).toList shouldBe List(12, 13)
+    stream.takeUsingUnfold(3).toList shouldBe List(12, 13)
+    stream.takeUsingUnfold(1).toList shouldBe List(12)
+    stream.takeUsingUnfold(0) shouldBe Empty
+    Empty.takeUsingUnfold(1) shouldBe Empty
   }
 
   "Stream.takeWhile" should "take elements while condition is true" in {
@@ -38,6 +44,12 @@ class StreamSpec extends FlatSpec with Matchers {
     stream.takeWhileUsingFR(_ % 2 != 0) shouldBe Empty
     stream.takeWhileUsingFR(_ => false) shouldBe Empty
     (Empty: Stream[Int]).takeWhileUsingFR(_ % 2 == 0) shouldBe Empty
+
+    stream.takeWhileUsingUnfold(_ => true).toList shouldBe List(12, 13)
+    stream.takeWhileUsingUnfold(_ % 2 == 0).toList shouldBe List(12)
+    stream.takeWhileUsingUnfold(_ % 2 != 0) shouldBe Empty
+    stream.takeWhileUsingUnfold(_ => false) shouldBe Empty
+    (Empty: Stream[Int]).takeWhileUsingUnfold(_ % 2 == 0) shouldBe Empty
   }
 
   "Stream.forAll" should "return true if all the elements satisfy condition" in {
@@ -53,6 +65,7 @@ class StreamSpec extends FlatSpec with Matchers {
   "Stream.headOption" should "the first element of Stream if exists" in {
     stream.headOption shouldBe Some(f)
     Empty.headOption shouldBe None
+
     stream.headOptionUsingFR shouldBe Some(f)
     Empty.headOptionUsingFR shouldBe None
   }
@@ -60,8 +73,9 @@ class StreamSpec extends FlatSpec with Matchers {
   "Stream.map" should "map all the elements of stream" in {
     stream.map(_ + 2).toList shouldBe List(14, 15)
     Empty.map(identity) shouldBe Empty
-    stream.headOptionUsingFR shouldBe Some(f)
-    Empty.headOptionUsingFR shouldBe None
+
+    stream.mapUsingUnfold(_ + 2).toList shouldBe List(14, 15)
+    Empty.mapUsingUnfold(identity) shouldBe Empty
   }
 
   "Stream.filter" should "filter elements of the stream" in {
@@ -103,20 +117,40 @@ class StreamSpec extends FlatSpec with Matchers {
 
   "Stream.constant" should "generate an infinite stream of a constant" in {
     Stream.constant("cons").take(100).toList shouldBe List.fill(100)("cons")
+
+    Stream.constantUsingUnfold("cons").take(100).toList shouldBe List.fill(100)("cons")
   }
 
   "Stream.from" should "generate an infinite stream int stating from n" in {
     Stream.from(10).take(6).toList shouldBe List(10, 11, 12, 13, 14, 15)
+
+    Stream.fromUsingUnfold(10).take(6).toList shouldBe List(10, 11, 12, 13, 14, 15)
   }
 
   "Stream.fibs" should "generate Fibonacci numbers" in {
     Stream.fibs().take(10).toList shouldBe List(0, 1, 1, 2, 3, 5, 8, 13, 21, 34)
+
+    Stream.fibsUsingUnfold().take(10).toList shouldBe List(0, 1, 1, 2, 3, 5, 8, 13, 21, 34)
   }
 
   "Stream.unfold" should "generate s stream" in {
     Stream.unfold(0)(x => if (x < 11) Some(x, x + 1) else None).toList shouldBe List(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     Stream.unfold("0")(x => if (x.length < 5) Some(x, s"$x${x.last.toString.toInt + 1}") else None).toList shouldBe List("0", "01", "012", "0123")
     Stream.unfold(1)(_ => None) shouldBe Empty
+  }
 
+  "Stream.zipWith" should "zip one stream with another" in {
+    Stream.constant(1).zipWith(Stream.constant(2)).take(5).toList shouldBe List.fill(5)(1 -> 2)
+    Stream.constant(1).take(4).zipWith(Stream.constant(2)).toList shouldBe List.fill(4)(1 -> 2)
+    Empty.zipWith(Stream.constant(2)) shouldBe Empty
+    Stream.constant(1).zipWith(Empty) shouldBe Empty
+  }
+
+  "Stream.zipAll" should "zip all the elements of one stream with all the elements of another" in {
+    Stream.constant(1).zipAll(Stream.constant(2)).take(5).toList shouldBe List.fill(5)(Some(1) -> Some(2))
+    Stream.constant(1).take(1).zipAll(Stream.constant(2).take(2)).toList shouldBe List(Some(1) -> Some(2), None -> Some(2))
+    Stream.constant(1).take(2).zipAll(Stream.constant(2).take(1)).toList shouldBe List(Some(1) -> Some(2), Some(1) -> None)
+    Empty.zipAll(Stream.constant(2)).take(5).toList shouldBe List.fill(5)(None -> Some(2))
+    Stream.constant(1).zipAll(Empty).take(5).toList shouldBe List.fill(5)(Some(1) -> None)
   }
 }

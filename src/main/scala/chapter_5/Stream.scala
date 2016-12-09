@@ -113,6 +113,23 @@ sealed trait Stream[+A] {
         Some(None -> Some(h()), Empty -> t())
       case _ => None
     }
+
+  def startsWithUsingExists[AA >: A](s: Stream[AA]): Boolean =
+    !zipAll(s).exists {
+      case (None, Some(_)) => true
+      case (Some(a), Some(b)) => a != b
+      case _ => false
+    }
+
+  def startsWith[AA >: A](s: Stream[AA]): Boolean =
+    zipAll(s).takeWhile(_._2.isDefined).forAll { case (a, b) => a == b }
+
+  def tails: Stream[Stream[A]] =
+    unfold(this) {
+      case s@Cons(_, t) => Some(s -> t())
+      case _ => None
+    }
+
 }
 
 case object Empty extends Stream[Nothing]

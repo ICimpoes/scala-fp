@@ -153,4 +153,32 @@ class StreamSpec extends FlatSpec with Matchers {
     Empty.zipAll(Stream.constant(2)).take(5).toList shouldBe List.fill(5)(None -> Some(2))
     Stream.constant(1).zipAll(Empty).take(5).toList shouldBe List.fill(5)(Some(1) -> None)
   }
+
+  "Stream.startsWith" should "check if one stream starts with another" in {
+    stream.startsWith(stream) shouldBe true
+    stream.startsWith(Empty) shouldBe true
+    Empty.startsWith(Empty) shouldBe true
+    Stream(1, 2, 3).startsWith(Stream(1, 2)) shouldBe true
+
+    Stream(1, 2, 3).startsWith(Stream(1, 2, 3, 4)) shouldBe false
+    Stream(1, 2, 3).startsWith(Stream(1, 2, 4)) shouldBe false
+    Stream(1, 2, 3).startsWith(Stream(2)) shouldBe false
+    Empty.startsWith(Stream(2)) shouldBe false
+
+    stream.startsWithUsingExists(stream) shouldBe true
+    stream.startsWithUsingExists(Empty) shouldBe true
+    Empty.startsWithUsingExists(Empty) shouldBe true
+    Stream(1, 2, 3).startsWithUsingExists(Stream(1, 2)) shouldBe true
+
+    Stream(1, 2, 3).startsWithUsingExists(Stream(1, 2, 3, 4)) shouldBe false
+    Stream(1, 2, 3).startsWithUsingExists(Stream(1, 2, 4)) shouldBe false
+    Stream(1, 2, 3).startsWithUsingExists(Stream(2)) shouldBe false
+    Empty.startsWithUsingExists(Stream(2)) shouldBe false
+  }
+
+  "Stream.tails" should "return all the tails of stream" in {
+    stream.tails.toList.map(_.toList) shouldBe List(List(12, 13), List(13))
+    Stream.from(1).take(5).tails.toList.map(_.toList) shouldBe List(List(1, 2, 3, 4, 5), List(2, 3, 4, 5), List(3, 4, 5), List(4, 5), List(5))
+    Empty.tails shouldBe Empty
+  }
 }

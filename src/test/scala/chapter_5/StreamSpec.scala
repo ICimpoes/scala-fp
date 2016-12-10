@@ -181,4 +181,29 @@ class StreamSpec extends FlatSpec with Matchers {
     Stream.from(1).take(5).tails.toList.map(_.toList) shouldBe List(List(1, 2, 3, 4, 5), List(2, 3, 4, 5), List(3, 4, 5), List(4, 5), List(5))
     Empty.tails shouldBe Empty
   }
+
+  "Stream.hasSubSequence" should "check if stream has given sub sequence" in {
+    stream.hasSubSequence(stream) shouldBe true
+    stream.hasSubSequence(Empty) shouldBe true
+    Stream(1, 2, 3).hasSubSequence(Stream(1, 2)) shouldBe true
+    Stream(1, 2, 3).hasSubSequence(Stream(1)) shouldBe true
+    Stream(1, 2, 3).hasSubSequence(Stream(2)) shouldBe true
+    Stream(1, 2, 3).hasSubSequence(Stream(3)) shouldBe true
+    Stream(1, 2, 3).hasSubSequence(Stream(2, 3)) shouldBe true
+
+    Stream(1, 2, 3).hasSubSequence(Stream(1, 2, 3, 4)) shouldBe false
+    Stream(1, 2, 3).hasSubSequence(Stream(1, 2, 4)) shouldBe false
+    Empty.hasSubSequence(Stream(2)) shouldBe false
+  }
+
+  "Stream.scanRight" should "return intermediate results of function" in {
+    Stream(1,2,3).scanRight(1)(_ + _).toList shouldBe List(7, 6, 4, 1)
+    Stream(1,2,3).scanRight(0)(_ - _).toList shouldBe List(2, -1, 3, 0)
+    Stream(1,2,3).scanRight(2)(_ - _).toList shouldBe List(0, 1, 1, 2)
+
+    Stream(1,2,3).scanRight_2(1)(_ + _).toList shouldBe List(7, 6, 4, 1)
+    Stream(1,2,3).scanRight_2(0)(_ - _).toList shouldBe List(2, -1, 3, 0)
+    Stream(1,2,3).scanRight_2(2)(_ - _).toList shouldBe List(0, 1, 1, 2)
+
+  }
 }

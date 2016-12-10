@@ -39,8 +39,15 @@ class ListSpec extends FlatSpec with Matchers {
       nrOfCalls += 1
       if (a == 0.0) 0 else a * b
     }
+    def prod2(a: Double, b: Double): Double = {
+      nrOfCalls += 1
+      if (a == 0.0) 0 else a * b
+    }
     List.foldRightLazy(List[Double](1, 2, 0, 4, 5, 1, 1, 2), 1.0)(prod) shouldBe 0
     nrOfCalls shouldBe 3
+    nrOfCalls = 0
+    List.foldRight(List[Double](1, 2, 0, 4, 5, 1, 1, 2), 1.0)(prod2) shouldBe 0
+    nrOfCalls shouldBe 8
   }
   "List.sum2" should "return sum of all the numbers in the list" in {
     List.sum2(List[Double](1, 2, 0, 4)) shouldBe 7

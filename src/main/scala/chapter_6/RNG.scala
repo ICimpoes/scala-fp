@@ -13,7 +13,7 @@ object RNG {
   val int: Rand[Int] = _.nextInt
 
   val double: Rand[Double] =
-    map(nonNegativeInt)(_ / (Integer.MAX_VALUE.toDouble + 1))
+    map(nonNegativeInt)(_ / Integer.MAX_VALUE.toDouble)
 
   val randIntDouble: Rand[(Int, Double)] =
     both(int, double)
@@ -49,9 +49,9 @@ object RNG {
     def go(cnt: Int, rng: RNG, acc: List[Int]): (List[Int], RNG) = {
       if (cnt > 0) {
         val (i, r) = rng.nextInt
-        go(cnt - 1, r, acc.+:(i))
+        go(cnt - 1, r, i :: acc)
       } else {
-        acc -> rng
+        acc.reverse -> rng
       }
     }
     go(count, rng, Nil)
@@ -78,10 +78,10 @@ object RNG {
 
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] =
     rng => {
-      fs.foldRight(List[A]() -> rng) {
-        case (ra, (l, r1)) =>
+      fs.foldLeft(List[A]() -> rng) {
+        case ((l, r1), ra) =>
           val (e, r2) = ra(r1)
-          (e :: l) -> r2
+          l.:+(e) -> r2
       }
     }
 
@@ -89,7 +89,7 @@ object RNG {
     fs.foldRight(unit(List[A]()))((a, acc) => map2(a, acc)(_ :: _))
 
   def ints2(count: Int): Rand[List[Int]] =
-    sequence(List.fill(count)(int))
+    sequence2(List.fill(count)(int))
 
   def nonNegativeEven: Rand[Int] =
     map(nonNegativeInt)(i => i - i % 2)

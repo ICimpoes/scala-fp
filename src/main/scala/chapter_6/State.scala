@@ -22,10 +22,37 @@ object State {
 
   type Rand[A] = State[RNG, A]
 
+  val int: Rand[Int] = State(_.nextInt)
+
+  def ints(count: Int): Rand[List[Int]] =
+    sequence(List.fill(count)(int))
+
   def unit[S, A](a: A): State[S, A] =
     State(a -> _)
 
   def sequence[S, A](fs: List[State[S, A]]): State[S, List[A]] =
     fs.foldRight(unit[S, List[A]](List[A]()))((a, acc) => a.map2(acc)(_ :: _))
+
+  def get[S]: State[S, S] = State(s => (s, s))
+
+  def set[S](s: S): State[S, Unit] = State(_ => ((), s))
+
+  def modify[S](f: S => S): State[S, Unit] = for {
+    s <- get
+    _ <- set(f(s))
+  } yield ()
+
+  val ns: Rand[List[Int]] =
+    int.flatMap(x =>
+      int.flatMap(y =>
+        ints(x).map(xs =>
+          xs.map(_ % y))))
+
+  val ns2: Rand[List[Int]] = for {
+    x <- int
+    y <- int
+    xs <- ints(x)
+  } yield xs.map(_ % y)
+
 
 }

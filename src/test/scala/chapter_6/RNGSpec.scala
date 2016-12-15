@@ -54,8 +54,36 @@ class RNGSpec extends FlatSpec with Matchers {
     r4 shouldBe TestRNG(4)
   }
 
+  "RNG.mapUsingFM" should "map over RNG" in {
+    val sRngUsingFM: Rand[String] = mapUsingFM(int)(x => s"int: $x")
+    val (x1, r1) = sRngUsingFM(zeroRng)
+    val (x2, r2) = sRngUsingFM(r1)
+    val (x3, r3) = sRngUsingFM(r2)
+    val (x4, r4) = sRngUsingFM(r3)
+
+    x1 shouldBe "int: 0"
+    x2 shouldBe "int: 1"
+    x3 shouldBe "int: 2"
+    x4 shouldBe "int: 3"
+    r4 shouldBe TestRNG(4)
+  }
+
   "RNG.map2" should "map over two RNG" in {
     val iSRng = map2(int, sRng)((i, s) => s"$s - $i")
+    val (x1, r1) = iSRng(zeroRng)
+    val (x2, r2) = iSRng(r1)
+    val (x3, r3) = iSRng(r2)
+    val (x4, r4) = iSRng(r3)
+
+    x1 shouldBe "int: 1 - 0"
+    x2 shouldBe "int: 3 - 2"
+    x3 shouldBe "int: 5 - 4"
+    x4 shouldBe "int: 7 - 6"
+    r4 shouldBe TestRNG(8)
+  }
+
+  "RNG.map2UsingFM" should "map over two RNG" in {
+    val iSRng = map2UsingFM(int, sRng)((i, s) => s"$s - $i")
     val (x1, r1) = iSRng(zeroRng)
     val (x2, r2) = iSRng(r1)
     val (x3, r3) = iSRng(r2)
@@ -88,8 +116,8 @@ class RNGSpec extends FlatSpec with Matchers {
     val (x3, r3) = int(r2)
     val (x4, r4) = int(r3)
 
-    val (l1 , rng1) = sequence(List(int, int, int, int))(zeroRng)
-    val (l2 , rng2) = sequence2(List(int, int, int, int))(zeroRng)
+    val (l1, rng1) = sequence(List(int, int, int, int))(zeroRng)
+    val (l2, rng2) = sequence2(List(int, int, int, int))(zeroRng)
 
 
     l1 shouldBe List(x1, x2, x3, x4)
@@ -108,5 +136,25 @@ class RNGSpec extends FlatSpec with Matchers {
     x2 shouldBe MAX_VALUE - 1
     x3 shouldBe MAX_VALUE - 3
     r3 shouldBe TestRNG(MIN_VALUE + 3)
+  }
+
+  "RNG.flatMap" should "flatMap over two Rands" in {
+    def f(i: Int): Rand[String] = {
+      if (i % 2 == 0) sRng
+      else f(i)
+    }
+
+    val res: Rand[String] = flatMap(int)(f)
+
+    val (x1, r1) = res(zeroRng)
+    val (x2, r2) = res(r1)
+    val (x3, r3) = res(r2)
+    val (x4, r4) = res(r3)
+
+    x1 shouldBe "int: 1"
+    x2 shouldBe "int: 3"
+    x3 shouldBe "int: 5"
+    x4 shouldBe "int: 7"
+    r4 shouldBe TestRNG(8)
   }
 }

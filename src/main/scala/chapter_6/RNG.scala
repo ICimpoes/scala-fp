@@ -21,6 +21,9 @@ object RNG {
   val randDoubleInt: Rand[(Double, Int)] =
     both(double, int)
 
+  val nonNegativeEven: Rand[Int] =
+    map(nonNegativeInt)(i => i - i % 2)
+
   def nonNegativeInt(rng: RNG): (Int, RNG) = {
     val res@(i, r) = rng.nextInt
     if (i < 0) -(i + 1) -> r
@@ -91,9 +94,26 @@ object RNG {
   def ints2(count: Int): Rand[List[Int]] =
     sequence2(List.fill(count)(int))
 
-  def nonNegativeEven: Rand[Int] =
-    map(nonNegativeInt)(i => i - i % 2)
+  def flatMap[A, B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
+    rng => {
+      val (a, r) = f(rng)
+      g(a)(r)
+    }
 
+  def nonNegativeLessThan(n: Int): Rand[Int] = {
+    flatMap(nonNegativeInt) { i =>
+      val mod = i % n
+      if (i + (n-1) - mod >= 0) unit(mod) else nonNegativeLessThan(n)
+    }
+  }
+
+  def mapUsingFM[A, B](s: Rand[A])(f: A => B): Rand[B] =
+    flatMap(s)(a => unit(f(a)))
+
+  def map2UsingFM[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    flatMap(ra)(a => flatMap(rb)(b => unit(f(a, b))))
+
+  def rollDie: Rand[Int] = map(nonNegativeLessThan(6))(_ + 1)
 
 }
 

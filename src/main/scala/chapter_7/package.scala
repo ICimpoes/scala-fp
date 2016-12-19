@@ -1,3 +1,5 @@
+import chapter_7.Par.Par
+
 package object chapter_7 {
 
   def sum(l: IndexedSeq[Int]): Int = {
@@ -14,7 +16,7 @@ package object chapter_7 {
       Par.unit(ints.headOption getOrElse 0)
     else {
       val (l, r) = ints.splitAt(ints.size / 2)
-      Par.map2(sumPar(l), sumPar(r))(_ + _)
+      Par.map2(Par.fork(sumPar(l)), Par.fork(sumPar(r)))(_ + _)
     }
   }
 

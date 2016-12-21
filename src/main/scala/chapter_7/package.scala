@@ -1,4 +1,5 @@
 import chapter_7.Par.Par
+import chapter_7.Par._
 
 package object chapter_7 {
 
@@ -13,11 +14,15 @@ package object chapter_7 {
 
   def sumPar(ints: IndexedSeq[Int]): Par[Int] = {
     if (ints.size <= 1)
-      Par.unit(ints.headOption getOrElse 0)
+      unit(ints.headOption getOrElse 0)
     else {
       val (l, r) = ints.splitAt(ints.size / 2)
-      Par.map2(Par.fork(sumPar(l)), Par.fork(sumPar(r)))(_ + _)
+      fork(sumPar(l)).map2(fork(sumPar(r)))(_ + _)
     }
   }
+
+  def sortPar(ps: Par[List[Int]]): Par[List[Int]] =
+    ps.map(_.sorted)
+
 
 }

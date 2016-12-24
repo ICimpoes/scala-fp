@@ -3,6 +3,8 @@ package chapter_7
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{Callable, CountDownLatch, ExecutorService, Executors}
 
+import scala.util.Try
+
 object NonBlocking {
 
   sealed trait Future[A] {
@@ -19,7 +21,7 @@ object NonBlocking {
     val ref = new AtomicReference[A]
     val latch = new CountDownLatch(1)
     p(es) { a =>
-      ref.set(a)
+      Try(ref.set(a))
       latch.countDown()
     }
     latch.await()
@@ -62,7 +64,7 @@ object A extends App {
 
   import NonBlocking._
 
-  val es: ExecutorService = Executors.newFixedThreadPool(1)
+  val es: ExecutorService = Executors.newSingleThreadExecutor()
 
   val p1 = fork(unit {
     Thread.sleep(1000)
@@ -72,6 +74,7 @@ object A extends App {
 
   val p2 = fork(unit {
     Thread.sleep(1000)
+    throw new Exception("eas")
     println("6")
     6
   })
@@ -84,5 +87,6 @@ object A extends App {
 
   println("res: " + run(es)(map2WithActor(p1, p2)(_ + _)))
 
+  println("finished!")
 
 }

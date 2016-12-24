@@ -98,6 +98,39 @@ object Par {
   def delay[A](fa: => Par[A]): Par[A] =
     es => fa(es)
 
+  def choice[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    es =>
+      if (cond.run(es).get()) t(es)
+      else f(es)
+
+  def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+    es =>
+      choices(n.run(es).get())(es)
+
+  def choiceUsingCN[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    choiceN(cond.map(c => if (c) 0 else 1))(List(t, f))
+
+  def chooser[A, B](pa: Par[A])(choices: A => Par[B]): Par[B] =
+    es => choices(pa.run(es).get())(es)
+
+  def choiceUsingChooser[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    chooser(cond)(if (_) t; else f)
+
+  def choiceNUsingChooser[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+    chooser(n)(choices(_))
+
+  def flatMap[A,B](a: Par[A])(f: A => Par[B]): Par[B] =
+    es => f(a.run(es).get())(es)
+
+  def join[A](a: Par[Par[A]]): Par[A] =
+    es => a.run(es).get()(es)
+
+  def flatMapUsingJoin[A,B](a: Par[A])(f: A => Par[B]): Par[B] =
+    join(a.map(f))
+
+  def joinUsingFlatMap[A](pa: Par[Par[A]]): Par[A] =
+    es => flatMap(pa)(a => a)(es)
+
   private case class UnitFuture[A](get: A) extends Future[A] {
 
     def isDone = true

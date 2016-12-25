@@ -24,6 +24,8 @@ object State {
 
   val int: Rand[Int] = State(_.nextInt)
 
+  def nonNegativeLessThan(n: Int) = State(RNG.nonNegativeLessThan(n))
+
   def ints(count: Int): Rand[List[Int]] =
     sequence(List.fill(count)(int))
 

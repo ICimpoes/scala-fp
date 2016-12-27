@@ -1,23 +1,35 @@
 package chapter_8
 
-trait Prop {
+import chapter_6.RNG
+import chapter_8.Prop._
 
-  self =>
+case class Prop(run: (TestCases, RNG) => Result) {
 
-  import Prop._
+  def &&(p: Prop): Prop = Prop((tc, rng) => {
+    val result1 = run(tc, rng)
+    if (result1.isFalsified)
+      p.run(tc, rng)
+    else
+      result1
+  })
 
-  def check: Either[(FailedCase, SuccessCount), SuccessCount]
+  def ||(p: Prop): Prop = Prop((tc, rng) => {
+    val result1 = run(tc, rng)
+    if (!result1.isFalsified)
+      p.run(tc, rng)
+    else
+      result1
 
-  def &&(p: Prop): Prop = new Prop {
-    val check = for {
-      s1 <- self.check
-      s2 <- p.check
-    } yield s1 + s2
-  }
+  })
 
 }
 
 object Prop {
+
   type FailedCase = String
+
   type SuccessCount = Int
+
+  type TestCases = Int
+
 }

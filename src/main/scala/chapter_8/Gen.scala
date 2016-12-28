@@ -3,7 +3,7 @@ package chapter_8
 import chapter_6.{RNG, State}
 import chapter_5.Stream
 
-case class Gen[A](sample: State[RNG, A]) {
+case class Gen[+A](sample: State[RNG, A]) {
 
   def flatMap[B](f: A => Gen[B]): Gen[B] =
     Gen(sample.flatMap(a => f(a).sample))
@@ -12,7 +12,7 @@ case class Gen[A](sample: State[RNG, A]) {
     size.flatMap(s => Gen(State.sequence(List.fill(s)(sample))))
 
   def forAll(f: A => Boolean): Prop = Prop {
-    (n, rng) =>
+    (max, n, rng) =>
       randomStream(rng)
         .zipWith(Stream.from(0))
         .take(n)
@@ -29,6 +29,9 @@ case class Gen[A](sample: State[RNG, A]) {
 
   def randomStream(rng: RNG): Stream[A] =
     Stream.unfold(rng)(r => Some(sample.run(r)))
+
+  def unsized: SGen[A] = SGen(_ => this)
+
 }
 
 

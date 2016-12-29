@@ -3,15 +3,13 @@ package chapter_8
 import chapter_8.SGen._
 import org.scalatest.{FlatSpec, Matchers}
 
-import scala.util.Try
-
 class PropSpec extends FlatSpec with Matchers {
 
   val smallInt = Gen.choose(-10, 10)
 
   "Prop.run" should "return Passed for forAll returning true" in {
-    val maxProp = forAll(listOf(smallInt)) { ns =>
-      val max = Try(ns.max).getOrElse(0)
+    val maxProp = forAll(listOf1(smallInt)) { ns =>
+      val max = ns.max
       !ns.exists(_ > max)
     }
     Prop.run(maxProp) shouldBe Passed

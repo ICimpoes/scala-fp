@@ -21,6 +21,11 @@ case class Prop(run: (MaxSize, TestCases, RNG) => Result) {
       result1
   })
 
+  def exec(maxSize: Int = 100,
+           testCases: Int = 100,
+           rng: RNG = SimpleRNG(System.currentTimeMillis)): Result =
+    Prop.run(this, maxSize, testCases, rng)
+
 }
 
 object Prop {

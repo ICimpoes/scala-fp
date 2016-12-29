@@ -24,7 +24,6 @@ object SGen {
   def forAll[A](g: Int => Gen[A])(f: A => Boolean): Prop = Prop {
     (max, n, rng) =>
       val casesPerSize = (n + (max - 1)) / max
-      println(casesPerSize)
       val props: Stream[Prop] =
         Stream.from(0).take((n min max) + 1).map { i => g(i).forAll(f) }
       val prop: Prop =

@@ -7,13 +7,7 @@ import scala.util.Try
 
 object NonBlocking {
 
-  sealed trait Future[A] {
-    private[chapter_7] def apply(k: A => Unit): Unit
-  }
-
-  implicit def lift[A](f: (A => Unit) => Unit): Future[A] = new Future[A] {
-    override private[chapter_7] def apply(k: (A) => Unit): Unit = f(k)
-  }
+  type Future[A] = (A => Unit) => Unit
 
   type Par[A] = ExecutorService => Future[A]
 

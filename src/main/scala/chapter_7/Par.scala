@@ -34,8 +34,8 @@ object Par {
     def map2WithTimeout[B, C](b: Par[B])(f: (A, B) => C)(timeout: Long, units: TimeUnit): Par[C] =
       Par.map2WithTimeout(inst, b)(f)(timeout, units)
 
-    def equal(e: ExecutorService)(p2: Par[A]): Boolean =
-      inst(e).get == p2(e).get
+    def equal(p2: Par[A]): Par[Boolean] =
+      inst.map2(p2)(_ == _)
 
   }
 

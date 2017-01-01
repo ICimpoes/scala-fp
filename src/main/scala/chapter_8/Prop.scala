@@ -30,6 +30,9 @@ case class Prop(run: (MaxSize, TestCases, RNG) => Result) {
 
 object Prop {
 
+  def check(p: => Boolean): Prop = Prop { (_, _, _) =>
+    if (p) Proved else Falsified("()", 0)
+  }
 
   def run(p: Prop,
           maxSize: Int = 100,
@@ -41,6 +44,9 @@ object Prop {
         f
       case p@Passed =>
         println(s"+ OK, passed $testCases tests.")
+        p
+      case p@Proved =>
+        println(s"+ OK, proved property.")
         p
     }
 

@@ -10,6 +10,10 @@ case object Passed extends Result {
   val isFalsified = false
 }
 
+case object Proved extends Result{
+  val isFalsified = false
+}
+
 case class Falsified(failure: FailedCase,
                      successes: SuccessCount) extends Result {
   val isFalsified = true

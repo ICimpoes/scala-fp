@@ -14,6 +14,8 @@ object Par {
 
     def inst: Par[A]
 
+    def get(implicit es: ExecutorService): A = run.get()
+
     def run(implicit e: ExecutorService): Future[A] = Par.run(inst)
 
     def map2[B, C](b: Par[B])(f: (A, B) => C): Par[C] =

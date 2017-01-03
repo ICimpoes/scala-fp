@@ -8,4 +8,6 @@ val scalaTestVersion = "3.0.0"
 
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
 
+parallelExecution in Test := false
+
 libraryDependencies += scalaTest

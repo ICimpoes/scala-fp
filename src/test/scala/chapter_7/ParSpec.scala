@@ -14,15 +14,15 @@ class ParSpec extends FlatSpec with Matchers {
   implicit val es = Executors.newCachedThreadPool
 
   "Par.unit" should "create a Par[A] from A" in {
-    val res = Gen.unit(Par.unit(1)).forAll(i =>
-      i.map(_ + 1).get == Par.unit(2).get)
+    val res = Gen.unit(unit(1)).forAll(i =>
+      i.map(_ + 1).get == unit(2).get)
 
     res.exec() shouldBe Passed
     Prop.check(
-      Par.unit(1).map(_ + 1).equal(Par.unit(2)).get
+      unit(1).map(_ + 1).equal(unit(2)).get
     ).exec() shouldBe Proved
 
-    Gen.checkPar(Par.unit(1).map(_ + 1).equal(Par.unit(2))).exec() shouldBe Passed
+    Gen.checkPar(unit(1).map(_ + 1).equal(unit(2))).exec() shouldBe Passed
   }
 
   "Par.map" should "map over Par" in {
@@ -41,16 +41,16 @@ class ParSpec extends FlatSpec with Matchers {
   }
 
   "Par.parMap" should "map over elements of list in parallel" in {
-    val pint: Gen[List[Int]] = choose(-10, 10).listOfN(choose(0, 4))
+    val pint: Gen[List[Int]] = choose(-10, 10).listOfN(choose(0, 2))
     val p = pint.forAllPar { l =>
-      parMap(l)(_ * 2).equal(unit(l.map(_ * 2)))
+      parMap(l)(_ * 2).get == l.map(_ * 2)
     }
 
     p.exec(2, 2) shouldBe Passed
   }
 
   "Par.sequence" should "transform List[Par] int Par[List]" in {
-    val pint: Gen[List[Int]] = choose(-10, 10).listOfN(choose(0, 4))
+    val pint: Gen[List[Int]] = choose(-10, 10).listOfN(choose(0, 2))
     val p = pint.forAllPar { l =>
       sequence(l.map(unit)).equal(unit(l))
     }
@@ -59,10 +59,10 @@ class ParSpec extends FlatSpec with Matchers {
   }
 
   "Par.parFilter" should "filter elements of list in parallel" in {
-    val pint: Gen[List[Int]] = choose(-10, 10).listOfN(choose(0, 4))
+    val pint: Gen[List[Int]] = choose(-10, 10).listOfN(choose(0, 2))
     val oddFilt = (_: Int) % 2 == 0
     val p = pint.forAllPar { l =>
-      parFilter(l)(oddFilt).equal(unit(l.filter(oddFilt)))
+      parFilter(l)(oddFilt).get == l.filter(oddFilt)
     }
 
     p.exec(2, 2) shouldBe Passed

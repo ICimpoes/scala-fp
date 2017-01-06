@@ -7,7 +7,8 @@ trait Parsers[ParseError, Parser[+ _]] {
 
   def run[A](p: Parser[A])(input: String): Either[ParseError, A] = ???
 
-  implicit def char(c: Char): Parser[Char] = ???
+  implicit def char(c: Char): Parser[Char] =
+    string(c.toString).map(_.head)
 
   def or[A](s1: Parser[A], s2: Parser[A]): Parser[A] = ???
 

@@ -6,9 +6,9 @@ import org.scalacheck.Prop.forAll
 
 class ParsersSpec extends Properties("Parsers") {
 
-  val parsers = new Parsers[String, Parser] {}
+//  val parsers = new Parsers[String, Parser] {}
 
-  import parsers._
+//  import parsers._
 
 // Not Implemented
 //  property("char") = forAll { (c: Char) =>

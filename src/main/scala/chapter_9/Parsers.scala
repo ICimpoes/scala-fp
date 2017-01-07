@@ -2,17 +2,21 @@ package chapter_9
 
 import chapter_8.{Gen, Prop}
 
+import scala.util.matching.Regex
+
 trait Parsers[ParseError, Parser[+ _]] {
   self =>
 
-  def run[A](p: Parser[A])(input: String): Either[ParseError, A] = ???
+  def run[A](p: Parser[A])(input: String): Either[ParseError, A]
 
   implicit def char(c: Char): Parser[Char] =
     string(c.toString).map(_.head)
 
-  def or[A](s1: Parser[A], s2: => Parser[A]): Parser[A] = ???
+  def or[A](s1: Parser[A], s2: => Parser[A]): Parser[A]
 
-  implicit def string(s: String): Parser[String] = ???
+  implicit def string(s: String): Parser[String]
+
+  implicit def regex(r: Regex): Parser[String]
 
   implicit def operators[A](p: Parser[A]) = ParserOps[A](p)
 
@@ -30,17 +34,24 @@ trait Parsers[ParseError, Parser[+ _]] {
   def many1[A](p: Parser[A]): Parser[List[A]] =
     map2(p, many(p))(_ :: _)
 
-  def map[A, B](a: Parser[A])(f: A => B): Parser[B] = ???
+  def map[A, B](a: Parser[A])(f: A => B): Parser[B] =
+    flatMap(a)(pa => succeed(f(pa)))
 
-  def product[A, B](p: Parser[A], p2: => Parser[B]): Parser[(A, B)] = ???
+  def flatMap[A,B](p: Parser[A])(f: A => Parser[B]): Parser[B]
+
+  def product[A, B](p: Parser[A], p2: => Parser[B]): Parser[(A, B)] =
+    flatMap(p)(a => p2.map(a -> _))
 
   def map2[A, B, C](p: Parser[A], p2: => Parser[B])(f: (A, B) => C): Parser[C] =
     product(p, p2).map(f.tupled)
 
+  def map2VsFM[A, B, C](p: Parser[A], p2: => Parser[B])(f: (A, B) => C): Parser[C] =
+    flatMap(p)(a => p2.map(f(a, _)))
+
   def succeed[A](a: A): Parser[A] =
     string("") map (_ => a)
 
-  def slice[A](p: Parser[A]): Parser[String] = ???
+  def slice[A](p: Parser[A]): Parser[String]
 
   case class ParserOps[A](p: Parser[A]) {
     def |[B >: A](p2: Parser[B]): Parser[B] = self.or(p, p2)
@@ -52,6 +63,8 @@ trait Parsers[ParseError, Parser[+ _]] {
     def many1: Parser[List[A]] = self.many1(p)
 
     def map[B](f: A => B): Parser[B] = self.map(p)(f)
+
+    def flatMap[B](f: A => Parser[B]): Parser[B] = self.flatMap(p)(f)
 
     def listOfN(n: Int): Parser[List[A]] = self.listOfN(n, p)
 
@@ -82,6 +95,7 @@ trait Parsers[ParseError, Parser[+ _]] {
   object impl {
     val numA: Parser[Int] = char('a').many.slice.map(_.length)
     val numABs: Parser[(Int, Int)] = char('a').many.slice.map(_.length) ** char('b').many1.slice.map(_.length)
+    val contextSensitive: Parser[String] = regex("[0-9]+".r).flatMap(x => succeed(x.toInt)).flatMap(x => listOfN(x, char('a'))).slice
   }
 
 }

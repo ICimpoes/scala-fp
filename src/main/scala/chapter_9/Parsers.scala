@@ -37,7 +37,7 @@ trait Parsers[ParseError, Parser[+ _]] {
   def map[A, B](a: Parser[A])(f: A => B): Parser[B] =
     flatMap(a)(pa => succeed(f(pa)))
 
-  def flatMap[A,B](p: Parser[A])(f: A => Parser[B]): Parser[B]
+  def flatMap[A, B](p: Parser[A])(f: A => Parser[B]): Parser[B]
 
   def product[A, B](p: Parser[A], p2: => Parser[B]): Parser[(A, B)] =
     flatMap(p)(a => p2.map(a -> _))

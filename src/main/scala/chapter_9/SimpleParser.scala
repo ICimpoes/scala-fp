@@ -6,51 +6,55 @@ import scala.util.matching.Regex
 
 object SimpleParser {
 
-
-  type Parser[+A] = String => Result[A]
+  case class Location(input: String, offset: Int) {
+    def slice(length: Int) = input.slice(offset, length)
+    val left = input.drop(offset)
+  }
+  type Parser[+A] = Location => Result[A]
 
 
   val p = new Parsers[F, Parser] {
 
     def run[A](p: Parser[A])(input: String): Either[F, A] =
-      p(input).toEither
+      p(Location(input, 0)).toEither
 
     def or[A](s1: Parser[A], s2: => Parser[A]): Parser[A] =
-      (s: String) => {
-        val s1Res = s1(s)
+      (l: Location) => {
+        val s1Res = s1(l)
         if (s1Res.isSuccess)
           s1Res
         else
-          s2(s)
+          s2(l)
       }
 
+    override def succeed[A](a: A): Parser[A] = _ => S(a, 0)
+
     implicit def string(s: String): Parser[String] =
-      s => S(s)
+      (location: Location) => if (location.left.startsWith(s)) S(s, s.length) else F("Wrong string")
 
     implicit def double(s: String): Parser[Double] =
       regex("(-)?(\\d+)(\\.\\d*)?".r).map(_.toDouble)
 
     implicit def regex(r: Regex): Parser[String] =
-      (s: String) =>
-        s match {
+      (l: Location) =>
+        l.left match {
           case r(g1) =>
-            S(g1)
+            S(g1, g1.length)
           case _ =>
             F("does not match")
         }
 
-    def flatMap[A, B](p: Parser[A])(f: (A) => Parser[B]): Parser[B] = (s: String) => {
-      p(s) match {
-        case S(v) =>
-          println(v)
-          f(v)(s)
+    def flatMap[A, B](p: Parser[A])(f: (A) => Parser[B]): Parser[B] = (l: Location) => {
+      p(l) match {
+        case S(v, length) =>
+          f(v)(l.copy(offset = length + l.offset))
         case f: F =>
           f
       }
     }
 
     def slice[A](p: Parser[A]): Parser[String] =
-      p.map(_.toString)
+      p.map(x => x.toString)
   }
 
 }
@@ -68,7 +72,7 @@ object Result {
 
     override def toEither: Either[F, Nothing] = Left(this)
   }
-  case class S[A](get: A) extends Result[A] {
+  case class S[A](get: A, length: Int) extends Result[A] {
     val isSuccess: Boolean = true
 
     val isFailure: Boolean = false
@@ -91,10 +95,10 @@ object M extends App {
 
 
   import SimpleParser._
-
+  import p._
 
   //WIP
-  println(p.run(p.impl.numA)("aaaB"))
+  println(p.run(p.string("aaB") | p.string("aaaB"))("aaaBasd"))
 
 
 }

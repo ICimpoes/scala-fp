@@ -32,16 +32,16 @@ object SimpleParser {
     implicit def string(s: String): Parser[String] =
       (location: Location) => if (location.left.startsWith(s)) S(s, s.length) else F("Wrong string")
 
-    implicit def double(s: String): Parser[Double] =
+    implicit def double: Parser[Double] =
       regex("(-)?(\\d+)(\\.\\d*)?".r).map(_.toDouble)
 
     implicit def regex(r: Regex): Parser[String] =
       (l: Location) =>
-        l.left match {
-          case r(g1) =>
-            S(g1, g1.length)
+        r.findPrefixOf(l.left) match {
+          case Some(str) =>
+            S(str, str.length)
           case _ =>
-            F("does not match")
+            F(s"${l.left} does not match: $r")
         }
 
     def flatMap[A, B](p: Parser[A])(f: (A) => Parser[B]): Parser[B] = (l: Location) => {
@@ -98,7 +98,7 @@ object M extends App {
   import p._
 
   //WIP
-  println(p.run(p.string("aaB") | p.string("aaaB"))("aaaBasd"))
+  println(p.run(double map (_ + 1))("1"))
 
 
 }

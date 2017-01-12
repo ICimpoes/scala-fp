@@ -54,7 +54,7 @@ object SimpleParser {
     }
 
     def slice[A](p: Parser[A]): Parser[String] =
-      p.map(x => x.toString)
+      p.map(_.toString)
   }
 
 }

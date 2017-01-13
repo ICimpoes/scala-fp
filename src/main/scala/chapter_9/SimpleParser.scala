@@ -10,8 +10,8 @@ object SimpleParser {
     def slice(length: Int) = input.slice(offset, length)
     val left = input.drop(offset)
   }
-  type Parser[+A] = Location => Result[A]
 
+  type Parser[+A] = Location => Result[A]
 
   val p = new Parsers[F, Parser] {
 
@@ -30,7 +30,7 @@ object SimpleParser {
     override def succeed[A](a: A): Parser[A] = _ => S(a, 0)
 
     implicit def string(s: String): Parser[String] =
-      (location: Location) => if (location.left.startsWith(s)) S(s, s.length) else F("Wrong string")
+      (location: Location) => if (location.left.startsWith(s)) S(s, s.length) else F(s"Wrong string: Expected $s found ${location.left}")
 
     implicit def double: Parser[Double] =
       regex("(-)?(\\d+)(\\.\\d*)?".r).map(_.toDouble)
@@ -54,12 +54,17 @@ object SimpleParser {
     }
 
     def slice[A](p: Parser[A]): Parser[String] =
-      p.map(_.toString)
+      l => p(l) match {
+        case S(_, length) =>
+          S(l.slice(length), length)
+        case f: F =>
+          f
+      }
   }
 
 }
 
-trait Result[+A] {
+sealed trait Result[+A] {
   def isSuccess: Boolean
   def isFailure: Boolean
   def toEither: Either[F, A]
@@ -98,7 +103,7 @@ object M extends App {
   import p._
 
   //WIP
-  println(p.run(double map (_ + 1))("1"))
+  println(run(p.string("aaacc").many.slice)("aaaccaaaccaaaccsadds"))
 
 
 }

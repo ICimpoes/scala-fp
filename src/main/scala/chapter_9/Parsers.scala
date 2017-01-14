@@ -95,7 +95,7 @@ trait Parsers[ParseError, Parser[+ _]] {
   object impl {
     val numA: Parser[Int] = char('a').many.slice.map(_.length)
     val numABs: Parser[(Int, Int)] = char('a').many.slice.map(_.length) ** char('b').many1.slice.map(_.length)
-    val contextSensitive: Parser[String] = regex("[0-9]+".r).flatMap(x => succeed(x.toInt)).flatMap(x => listOfN(x, char('a'))).slice
+    val contextSensitive: Parser[String] = regex("[0-9]+".r).map(_.toInt).flatMap(x => listOfN(x, char('a'))).slice
   }
 
 }

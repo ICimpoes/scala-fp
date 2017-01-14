@@ -8,6 +8,7 @@ object SimpleParser {
 
   case class Location(input: String, offset: Int) {
     def slice(length: Int) = input.slice(offset, length)
+
     val left = input.drop(offset)
   }
 
@@ -46,10 +47,14 @@ object SimpleParser {
 
     def flatMap[A, B](p: Parser[A])(f: (A) => Parser[B]): Parser[B] = (l: Location) => {
       p(l) match {
-        case S(v, length) =>
-          f(v)(l.copy(offset = length + l.offset))
-        case f: F =>
-          f
+        case S(a, la) =>
+          f(a)(l.copy(offset = la + l.offset)) match {
+            case S(b, lb) =>
+              S(b, la + lb)
+            case fb => fb
+          }
+        case fa: F =>
+          fa
       }
     }
 
@@ -66,10 +71,14 @@ object SimpleParser {
 
 sealed trait Result[+A] {
   def isSuccess: Boolean
+
   def isFailure: Boolean
+
   def toEither: Either[F, A]
 }
+
 object Result {
+
   case class F(descr: String) extends Result[Nothing] {
     val isSuccess: Boolean = false
 
@@ -77,6 +86,7 @@ object Result {
 
     override def toEither: Either[F, Nothing] = Left(this)
   }
+
   case class S[A](get: A, length: Int) extends Result[A] {
     val isSuccess: Boolean = true
 
@@ -84,12 +94,12 @@ object Result {
 
     override def toEither: Either[F, A] = Right(get)
   }
+
 }
 
 object M extends App {
 
   type SimpParser = Map[String, Double]
-
 
   """
     |"a" : 1,
@@ -97,13 +107,14 @@ object M extends App {
   """.stripMargin
 
 
-
-
   import SimpleParser._
   import p._
 
   //WIP
   println(run(p.string("aaacc").many.slice)("aaaccaaaccaaaccsadds"))
+  println(run(p.impl.contextSensitive)("3aaa"))
+
+
 
 
 }

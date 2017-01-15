@@ -30,6 +30,9 @@ object SimpleParser {
 
     override def succeed[A](a: A): Parser[A] = _ => S(a, 0)
 
+    implicit def string: Parser[String] =
+      regex("\"[a-zA-Z]+\"".r)
+
     implicit def string(s: String): Parser[String] =
       (location: Location) => if (location.left.startsWith(s)) S(s, s.length) else F(s"Wrong string: Expected $s found ${location.left}")
 
@@ -101,20 +104,19 @@ object M extends App {
 
   type SimpParser = Map[String, Double]
 
-  """
-    |"a" : 1,
-    |"b: : 2
-  """.stripMargin
+  val input = """
+    |"qwe":9,"wer":1.2,"asda":44,"xx":42,
+  """.stripMargin.trim
 
 
   import SimpleParser._
   import p._
 
+  val tupleParser: Parser[(String, Double)] = string.flatMap(s => char(':').flatMap(_ => double.map(d => s -> d)))
+
+  println(p.run(tupleParser.manyWithSeparator(","))(input))
+
   //WIP
-  println(run(p.string("aaacc").many.slice)("aaaccaaaccaaaccsadds"))
-  println(run(p.impl.contextSensitive)("3aaa"))
-
-
-
-
+  println(run(p.string("aaacc").many.slice.map(_.toUpperCase))("aaaccaaaccaaaccsadds"))
+  println(run(p.impl.contextSensitive)("3aaahh"))
 }

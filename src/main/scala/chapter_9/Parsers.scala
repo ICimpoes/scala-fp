@@ -28,8 +28,11 @@ trait Parsers[ParseError, Parser[+ _]] {
     if (n <= 0) succeed(List[A]())
     else map2(p, listOfN(n - 1, p))(_ :: _)
 
-  def many[A](p: Parser[A]): Parser[List[A]] =
+  def many[A](  p: Parser[A]): Parser[List[A]] =
     or(map2(p, many(p))(_ :: _), succeed(List[A]()))
+
+  def manyWithSeparator[A](p: Parser[A])(separator: String): Parser[List[A]] =
+    or(map2(p.flatMap(x => string(separator).map(_ => x)), manyWithSeparator(p)(separator))(_ :: _), succeed(List[A]()))
 
   def many1[A](p: Parser[A]): Parser[List[A]] =
     map2(p, many(p))(_ :: _)
@@ -59,6 +62,7 @@ trait Parsers[ParseError, Parser[+ _]] {
     def or[B >: A](p2: => Parser[B]): Parser[B] = self.or(p, p2)
 
     def many: Parser[List[A]] = self.many(p)
+    def manyWithSeparator(separator: String): Parser[List[A]] = self.manyWithSeparator(p)(separator)
 
     def many1: Parser[List[A]] = self.many1(p)
 

@@ -105,14 +105,21 @@ object M extends App {
   type SimpParser = Map[String, Double]
 
   val input = """
-    |"qwe":9,"wer":1.2,"asda":44,"xx":42,
+    |"qwe" : 9,
+    |"wer" :    1.2,
+    |
+    |
+    |
+    |
+    |"asda"   :  44,
+    |"xx" :  42,
   """.stripMargin.trim
 
 
   import SimpleParser._
   import p._
 
-  val tupleParser: Parser[(String, Double)] = string.flatMap(s => char(':').flatMap(_ => double.map(d => s -> d)))
+  val tupleParser: Parser[(String, Double)] = string.skipL.skipR.flatMap(s => char(':').skipR.flatMap(_ => double.map(d => s -> d)))
 
   println(p.run(tupleParser.manyWithSeparator(","))(input))
 

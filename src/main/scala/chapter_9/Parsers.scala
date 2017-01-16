@@ -7,6 +7,7 @@ import scala.util.matching.Regex
 trait Parsers[ParseError, Parser[+ _]] {
   self =>
 
+
   def run[A](p: Parser[A])(input: String): Either[ParseError, A]
 
   implicit def char(c: Char): Parser[Char] =
@@ -56,12 +57,19 @@ trait Parsers[ParseError, Parser[+ _]] {
 
   def slice[A](p: Parser[A]): Parser[String]
 
+  def skipR[A](parser: Parser[A]): Parser[A] =
+    parser.map2(regex("\\s*".r))((a, _) => a)
+
+  def skipL[A](p: Parser[A]): Parser[A] =
+    regex("\\s*".r).map2(p)((_, a) => a)
+
   case class ParserOps[A](p: Parser[A]) {
     def |[B >: A](p2: Parser[B]): Parser[B] = self.or(p, p2)
 
     def or[B >: A](p2: => Parser[B]): Parser[B] = self.or(p, p2)
 
     def many: Parser[List[A]] = self.many(p)
+
     def manyWithSeparator(separator: String): Parser[List[A]] = self.manyWithSeparator(p)(separator)
 
     def many1: Parser[List[A]] = self.many1(p)
@@ -77,6 +85,10 @@ trait Parsers[ParseError, Parser[+ _]] {
     def slice: Parser[String] = self.slice(p)
 
     def **[B](p2: => Parser[B]): Parser[(A, B)] = self.product(p, p2)
+
+    def skipL: Parser[A] = self.skipL(p)
+
+    def skipR: Parser[A] = self.skipR(p)
   }
 
 

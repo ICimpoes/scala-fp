@@ -19,6 +19,9 @@ trait Parsers[ParseError, Parser[+ _]] {
 
   implicit def regex(r: Regex): Parser[String]
 
+  implicit def token(r: Regex): Parser[String] =
+    regex(r).<*>
+
   implicit def operators[A](p: Parser[A]) = ParserOps[A](p)
 
   implicit def asStringParser[A](a: A)(implicit f: A => Parser[String]): ParserOps[String] = ParserOps(f(a))
@@ -63,6 +66,9 @@ trait Parsers[ParseError, Parser[+ _]] {
   def skipL[A](p: Parser[A]): Parser[A] =
     regex("\\s*".r).map2(p)((_, a) => a)
 
+  def skip[A](p: Parser[A]): Parser[A] =
+    p.skipL.skipR
+
   case class ParserOps[A](p: Parser[A]) {
     def |[B >: A](p2: Parser[B]): Parser[B] = self.or(p, p2)
 
@@ -86,9 +92,13 @@ trait Parsers[ParseError, Parser[+ _]] {
 
     def **[B](p2: => Parser[B]): Parser[(A, B)] = self.product(p, p2)
 
-    def skipL: Parser[A] = self.skipL(p)
+    def *> : Parser[A] = self.skipL(p)
+    def skipL : Parser[A] = self.skipL(p)
 
-    def skipR: Parser[A] = self.skipR(p)
+    def <* : Parser[A] = self.skipR(p)
+    def skipR : Parser[A] = self.skipR(p)
+
+    def <*> : Parser[A] = self.skip(p)
   }
 
 

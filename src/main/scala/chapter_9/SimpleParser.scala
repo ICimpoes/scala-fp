@@ -31,13 +31,13 @@ object SimpleParser {
     override def succeed[A](a: A): Parser[A] = _ => S(a, 0)
 
     implicit def string: Parser[String] =
-      regex("\"[a-zA-Z]+\"".r)
+      token("\"[a-zA-Z]+\"".r)
 
     implicit def string(s: String): Parser[String] =
       (location: Location) => if (location.left.startsWith(s)) S(s, s.length) else F(s"Wrong string: Expected $s found ${location.left}")
 
     implicit def double: Parser[Double] =
-      regex("(-)?(\\d+)(\\.\\d*)?".r).map(_.toDouble)
+      token("(-)?(\\d+)(\\.\\d*)?".r).map(_.toDouble)
 
     implicit def regex(r: Regex): Parser[String] =
       (l: Location) =>
@@ -119,7 +119,7 @@ object M extends App {
   import SimpleParser._
   import p._
 
-  val tupleParser: Parser[(String, Double)] = string.skipL.skipR.flatMap(s => char(':').skipR.flatMap(_ => double.map(d => s -> d)))
+  val tupleParser: Parser[(String, Double)] = string.flatMap(s => char(':').flatMap(_ => double.map(d => s -> d)))
 
   println(p.run(tupleParser.manyWithSeparator(","))(input))
 

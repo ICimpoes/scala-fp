@@ -36,7 +36,7 @@ trait Parsers[ParseError, Parser[+ _]] {
     or(map2(p, many(p))(_ :: _), succeed(List[A]()))
 
   def manyWithSeparator[A](p: Parser[A])(separator: String): Parser[List[A]] =
-    or(map2(p.flatMap(x => string(separator).map(_ => x)), manyWithSeparator(p)(separator))(_ :: _), succeed(List[A]()))
+    or(map2(p.skipThat(separator), manyWithSeparator(p)(separator))(_ :: _), or(p.map(List(_)), succeed(List[A]())))
 
   def many1[A](p: Parser[A]): Parser[List[A]] =
     map2(p, many(p))(_ :: _)
@@ -69,6 +69,12 @@ trait Parsers[ParseError, Parser[+ _]] {
   def skip[A](p: Parser[A]): Parser[A] =
     p.skipL.skipR
 
+  def skipThis[A, B](pa: Parser[A])(pb: Parser[B]): Parser[B] =
+    pa.map2(pb)((_, b) => b)
+
+  def skipThat[A, B](pa: Parser[A])(pb: Parser[B]): Parser[A] =
+    pa.map2(pb)((a, _) => a)
+
   case class ParserOps[A](p: Parser[A]) {
     def |[B >: A](p2: Parser[B]): Parser[B] = self.or(p, p2)
 
@@ -99,6 +105,11 @@ trait Parsers[ParseError, Parser[+ _]] {
     def skipR : Parser[A] = self.skipR(p)
 
     def <*> : Parser[A] = self.skip(p)
+
+    def skipThis[B](pb: Parser[B]): Parser[B] = self.skipThis(p)(pb)
+
+    def skipThat[B](pb: Parser[B]) : Parser[A] = self.skipThat(p)(pb)
+
   }
 
 

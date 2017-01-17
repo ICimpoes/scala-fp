@@ -7,9 +7,13 @@ import scala.util.matching.Regex
 object SimpleParser {
 
   case class Location(input: String, offset: Int) {
-    def slice(length: Int) = input.slice(offset, length)
+
+    def slice(length: Int) = input.slice(offset, offset + length)
 
     val left = input.drop(offset)
+
+    def move(length: Int): Location = this.copy(offset = offset + length)
+
   }
 
   type Parser[+A] = Location => Result[A]
@@ -51,7 +55,7 @@ object SimpleParser {
     def flatMap[A, B](p: Parser[A])(f: (A) => Parser[B]): Parser[B] = (l: Location) => {
       p(l) match {
         case S(a, la) =>
-          f(a)(l.copy(offset = la + l.offset)) match {
+          f(a)(l.move(la)) match {
             case S(b, lb) =>
               S(b, la + lb)
             case fb => fb
@@ -123,7 +127,7 @@ object M extends App {
 
   println(p.run(tupleParser.manyWithSeparator(","))(input))
 
-  //WIP
   println(run(p.string("aaacc").many.slice.map(_.toUpperCase))("aaaccaaaccaaaccsadds"))
-  println(run(p.impl.contextSensitive)("3aaahh"))
+
+  println(run(p.string("blah") ** p.impl.contextSensitive ** char('h').many.slice)("blah3aaahh"))
 }

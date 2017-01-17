@@ -7,7 +7,6 @@ import scala.util.matching.Regex
 trait Parsers[ParseError, Parser[+ _]] {
   self =>
 
-
   def run[A](p: Parser[A])(input: String): Either[ParseError, A]
 
   implicit def char(c: Char): Parser[Char] =
@@ -33,10 +32,12 @@ trait Parsers[ParseError, Parser[+ _]] {
     else map2(p, listOfN(n - 1, p))(_ :: _)
 
   def many[A](  p: Parser[A]): Parser[List[A]] =
-    or(map2(p, many(p))(_ :: _), succeed(List[A]()))
+    map2(p, many(p))(_ :: _) | succeed(List[A]())
 
   def manyWithSeparator[A](p: Parser[A])(separator: String): Parser[List[A]] =
-    or(map2(p.skipThat(separator), manyWithSeparator(p)(separator))(_ :: _), or(p.map(List(_)), succeed(List[A]())))
+    map2(p.skipThat(separator), manyWithSeparator(p)(separator))(_ :: _) |
+      p.map(List(_)) |
+      succeed(List[A]())
 
   def many1[A](p: Parser[A]): Parser[List[A]] =
     map2(p, many(p))(_ :: _)
@@ -61,10 +62,10 @@ trait Parsers[ParseError, Parser[+ _]] {
   def slice[A](p: Parser[A]): Parser[String]
 
   def skipR[A](parser: Parser[A]): Parser[A] =
-    parser.map2(regex("\\s*".r))((a, _) => a)
+    parser.skipThat(regex("\\s*".r))
 
   def skipL[A](p: Parser[A]): Parser[A] =
-    regex("\\s*".r).map2(p)((_, a) => a)
+    regex("\\s*".r).skipThis(p)
 
   def skip[A](p: Parser[A]): Parser[A] =
     p.skipL.skipR

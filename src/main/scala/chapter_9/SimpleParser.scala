@@ -109,26 +109,36 @@ object M extends App {
   type SimpParser = Map[String, Double]
 
   val input = """
-               [
+               {
     |"qwe" : 9,
     |"wer" :    1.2,
     |
     |"asda"   :  44,
     |"xx" :  42
     |
-    | ]
+    | }
     |
-  """.stripMargin.trim
+  """.stripMargin
 
+  val empty =
+    """
+      |
+      | {
+      |
+      |  }
+      |
+      |""".stripMargin
 
   import SimpleParser._
   import p._
 
-  val tupleParser: Parser[(String, Double)] = string.skipThat(':').map2(double)(_ -> _)
+  val tupleParser: Parser[(String, Double)] = string.skipThat(':') ** double
+  val mapParser: Parser[SimpParser] = '{'.<*>.skipThis(tupleParser.manyWithSeparator(",")).skipThat('}'.<*>).map(_.toMap)
 
-  println(p.run('['.skipThis(tupleParser.manyWithSeparator(",")).skipThat(']'))(input))
+  println(p.run(mapParser)(input))
+  println(p.run(mapParser)(empty))
 
   println(run(p.string("aaacc").many.slice.map(_.toUpperCase))("aaaccaaaccaaaccsadds"))
 
-  println(run(p.string("blah") ** p.impl.contextSensitive ** char('h').many.slice)("blah3aaahh"))
+  println(run((p.string("blah") ** p.impl.contextSensitive ** char('h').many).slice)("blah3aaahhba"))
 }

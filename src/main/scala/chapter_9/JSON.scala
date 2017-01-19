@@ -14,6 +14,10 @@ object JSON {
 
   case class JArray(get: IndexedSeq[JSON]) extends JSON
 
-  case class JObject(get: Map[String, JSON]) extends JSON
+  case class JObject(get: Map[String, JSON]) extends JSON {
+    override def toString: String =
+      s"""JObject(
+          |${get.mkString("\n")})""".stripMargin
+  }
 
 }

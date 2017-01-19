@@ -17,7 +17,7 @@ trait Parsers[ParseError, Parser[+ _]] {
   implicit def string(s: String): Parser[String]
 
   def string: Parser[String] =
-    token("\"[a-zA-Z0-9_ ]+\"".r)
+    token("\"[a-zA-Z0-9_ ']+\"".r)
 
   implicit def regex(r: Regex): Parser[String]
 
@@ -77,14 +77,14 @@ trait Parsers[ParseError, Parser[+ _]] {
   def skip[A](p: Parser[A]): Parser[A] =
     p.skipL.skipR
 
-  def skipThis[A, B](pa: Parser[A])(pb: Parser[B]): Parser[B] =
+  def skipThis[A, B](pa: Parser[A])(pb: => Parser[B]): Parser[B] =
     pa.map2(pb)((_, b) => b)
 
-  def skipThat[A, B](pa: Parser[A])(pb: Parser[B]): Parser[A] =
+  def skipThat[A, B](pa: Parser[A])(pb: => Parser[B]): Parser[A] =
     pa.map2(pb)((a, _) => a)
 
   case class ParserOps[A](p: Parser[A]) {
-    def |[B >: A](p2: Parser[B]): Parser[B] = self.or(p, p2)
+    def |[B >: A](p2: => Parser[B]): Parser[B] = self.or(p, p2)
 
     def or[B >: A](p2: => Parser[B]): Parser[B] = self.or(p, p2)
 
@@ -114,9 +114,9 @@ trait Parsers[ParseError, Parser[+ _]] {
 
     def <*> : Parser[A] = self.skip(p)
 
-    def skipThis[B](pb: Parser[B]): Parser[B] = self.skipThis(p)(pb)
+    def skipThis[B](pb: => Parser[B]): Parser[B] = self.skipThis(p)(pb)
 
-    def skipThat[B](pb: Parser[B]) : Parser[A] = self.skipThat(p)(pb)
+    def skipThat[B](pb: => Parser[B]) : Parser[A] = self.skipThat(p)(pb)
 
   }
 

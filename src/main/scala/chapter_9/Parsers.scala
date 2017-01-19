@@ -16,9 +16,16 @@ trait Parsers[ParseError, Parser[+ _]] {
 
   implicit def string(s: String): Parser[String]
 
+  def string: Parser[String] =
+    token("\"[a-zA-Z0-9_ ]+\"".r)
+
   implicit def regex(r: Regex): Parser[String]
 
-  implicit def token(r: Regex): Parser[String] =
+  def double: Parser[Double] =
+    token("(-)?(\\d+)(\\.\\d*)?".r).map(_.toDouble)
+
+
+  def token(r: Regex): Parser[String] =
     regex(r).<*>
 
   implicit def operators[A](p: Parser[A]) = ParserOps[A](p)

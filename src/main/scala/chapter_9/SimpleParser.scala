@@ -18,7 +18,7 @@ object SimpleParser {
 
   type Parser[+A] = Location => Result[A]
 
-  val p = new Parsers[F, Parser] {
+  val parser = new Parsers[F, Parser] {
 
     def run[A](p: Parser[A])(input: String): Either[F, A] =
       p(Location(input, 0)).toEither
@@ -34,14 +34,8 @@ object SimpleParser {
 
     override def succeed[A](a: A): Parser[A] = _ => S(a, 0)
 
-    implicit def string: Parser[String] =
-      token("\"[a-zA-Z]+\"".r)
-
     implicit def string(s: String): Parser[String] =
       (location: Location) => if (location.left.startsWith(s)) S(s, s.length) else F(s"Wrong string: Expected $s found ${location.left}")
-
-    implicit def double: Parser[Double] =
-      token("(-)?(\\d+)(\\.\\d*)?".r).map(_.toDouble)
 
     implicit def regex(r: Regex): Parser[String] =
       (l: Location) =>
@@ -129,16 +123,23 @@ object M extends App {
       |
       |""".stripMargin
 
+
+  val js =
+    """{"Company name":"Microsoft Corporation","Ticker":"MSFT","Active":true,"Price":30.66,"Shares outstanding":8.38,"Related companies":["HPQ","IBM","YHOO","DELL","GOOG"]}""".stripMargin
+
+
   import SimpleParser._
-  import p._
+  import parser._
+
+  println(parser.run(jsonParser(parser))(js))
 
   val tupleParser: Parser[(String, Double)] = string.skipThat(':') ** double
   val mapParser: Parser[SimpParser] = '{'.<*>.skipThis(tupleParser.manyWithSeparator(",")).skipThat('}'.<*>).map(_.toMap)
 
-  println(p.run(mapParser)(input))
-  println(p.run(mapParser)(empty))
+  println(parser.run(mapParser)(input))
+  println(parser.run(mapParser)(empty))
 
-  println(run(p.string("aaacc").many.slice.map(_.toUpperCase))("aaaccaaaccaaaccsadds"))
+  println(run(parser.string("aaacc").many.slice.map(_.toUpperCase))("aaaccaaaccaaaccsadds"))
 
-  println(run((p.string("blah") ** p.impl.contextSensitive ** char('h').many).slice)("blah3aaahhba"))
+  println(run((parser.string("blah") ** parser.impl.contextSensitive ** char('h').many).slice)("blah3aaahhba"))
 }

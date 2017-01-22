@@ -17,7 +17,7 @@ trait Parsers[ParseError, Parser[+ _]] {
   implicit def string(s: String): Parser[String]
 
   def string: Parser[String] =
-    token("\"[a-zA-Z0-9_ ']+\"".r)
+    char('"').*>.skipThis(regex("[a-zA-Z0-9_ ']+".r)).skipThat(char('"')).<*
 
   implicit def regex(r: Regex): Parser[String]
 

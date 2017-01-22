@@ -1,5 +1,7 @@
 package chapter_9
 
+import java.util
+
 import org.scalacheck.{Gen, Properties}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Arbitrary._
@@ -11,8 +13,12 @@ class ParsersSpec extends Properties("Parsers") {
 
   import p._
 
+  val digits = (1 to 9).map(_.toString.head)
+  val myChars = ('A' to 'Z') ++ ('a' to 'z') ++ digits
+
+  val stringGen: Gen[String] = Gen.choose(1, 100).flatMap(len => Gen.buildableOfN[String, Char](len, Gen.oneOf(myChars)))
+
   val nonEmpty: Gen[String] = arbitrary[String].suchThat(_.nonEmpty)
-  val byReg: Gen[String] = arbitrary[String].suchThat(s => "[a-zA-Z0-9_ ']+".r.findFirstMatchIn(s).nonEmpty)
 
   property("char") = forAll { (c: Char) =>
     run(c)(c.toString) == Right(c)
@@ -36,13 +42,14 @@ class ParsersSpec extends Properties("Parsers") {
     p.run(s1 | s2)(s2) == Right(s2)
   }
 
-//  property("numA") = forAll(byReg) { (s: String) =>
-//    p.run(impl.numA)(s) == Right(s.count(_ == 'a'))
-//  }
-//
-//  property("string") = forAll(byReg) { (s: String) =>
-//    p.run(string)(s""""$s"""") == Right(s)
-//  }
+  property("numA") = forAll(stringGen) { (s: String) =>
+    p.run(impl.numA)(s) == Right(s.takeWhile(_ == 'a').length)
+  }
+
+
+  property("string") = forAll(stringGen) { (s: String) =>
+    p.run(string)(s""""$s"""") == Right(s)
+  }
 
   property("succeed") = forAll { (i: Int) =>
     p.run(succeed(i))("") == Right(i)

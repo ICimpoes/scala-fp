@@ -1,8 +1,11 @@
 import chapter_9.JSON._
+import chapter_9.SimpleParser.Location
 
 package object chapter_9 {
 
-  def jsonParser[Err, Parser[+_]](P: Parsers[Err, Parser]): Parser[JSON] = {
+  case class ParseError(stack: List[(Location, String)])
+
+  def jsonParser[Parser[+ _]](P: Parsers[Parser]): Parser[JSON] = {
     import P._
 
     def jNull = string("null").map(_ => JNull).<*>

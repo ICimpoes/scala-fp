@@ -14,11 +14,18 @@ object SimpleParser {
 
     def move(length: Int): Location = this.copy(offset = offset + length)
 
+    lazy val line = input.slice(0, offset + 1).count(_ == '\n') + 1
+
+    lazy val col = input.slice(0, offset + 1).lastIndexOf('\n') match {
+      case -1 => offset + 1
+      case lineStart => offset - lineStart
+    }
+
   }
 
   type Parser[+A] = Location => Result[A]
 
-  val parser = new Parsers[F, Parser] {
+  val parser = new Parsers[Parser] {
 
     def run[A](p: Parser[A])(input: String): Either[F, A] =
       p(Location(input, 0)).toEither
@@ -102,17 +109,18 @@ object M extends App {
 
   type SimpParser = Map[String, Double]
 
-  val input = """
+  val input =
+    """
                {
-    |"qwe" : 9,
-    |"wer" :    1.2,
-    |
-    |"asda"   :  44,
-    |"xx" :  42
-    |
-    | }
-    |
-  """.stripMargin
+      |"qwe" : 9,
+      |"wer" :    1.2,
+      |
+      |"asda"   :  44,
+      |"xx" :  42
+      |
+      | }
+      |
+    """.stripMargin
 
   val empty =
     """
@@ -121,84 +129,84 @@ object M extends App {
       |
       |  }
       |
-      |""".stripMargin
+      | """.stripMargin
 
-val complexJs =
-  """
-    |
-    |[
-    |	{
-    |		"id": "0001",
-    |		"type": "donut",
-    |		"name": "Cake",
-    |		"ppu": 0.55,
-    |		"batters":
-    |			{
-    |				"batter":
-    |					[
-    |						{ "id": "1001", "type": "Regular" },
-    |						{ "id": "1002", "type": "Chocolate" },
-    |						{ "id": "1003", "type": "Blueberry" },
-    |						{ "id": "1004", "type": "Devil's Food" }
-    |					]
-    |			},
-    |		"topping":
-    |			[
-    |				{ "id": "5001", "type": "None" },
-    |				{ "id": "5002", "type": "Glazed" },
-    |				{ "id": "5005", "type": "Sugar" },
-    |				{ "id": "5007", "type": "Powdered Sugar" },
-    |				{ "id": "5006", "type": "Chocolate with Sprinkles" },
-    |				{ "id": "5003", "type": "Chocolate" },
-    |				{ "id": "5004", "type": "Maple" }
-    |			]
-    |	},
-    |	{
-    |		"id": "0002",
-    |		"type": "donut",
-    |		"name": "Raised",
-    |		"ppu": 0.55,
-    |		"batters":
-    |			{
-    |				"batter":
-    |					[
-    |						{ "id": "1001", "type": "Regular" }
-    |					]
-    |			},
-    |		"topping":
-    |			[
-    |				{ "id": "5001", "type": "None" },
-    |				{ "id": "5002", "type": "Glazed" },
-    |				{ "id": "5005", "type": "Sugar" },
-    |				{ "id": "5003", "type": "Chocolate" },
-    |				{ "id": "5004", "type": "Maple" }
-    |			]
-    |	},
-    |	{
-    |		"id": "0003",
-    |		"type": "donut",
-    |		"name": "Old Fashioned",
-    |		"ppu": 0.55,
-    |		"batters":
-    |			{
-    |				"batter":
-    |					[
-    |						{ "id": "1001", "type": "Regular" },
-    |						{ "id": "1002", "type": "Chocolate" }
-    |					]
-    |			},
-    |		"topping":
-    |			[
-    |				{ "id": "5001", "type": "None" },
-    |				{ "id": "5002", "type": "Glazed" },
-    |				{ "id": "5003", "type": "Chocolate" },
-    |				{ "id": "5004", "type": "Maple" }
-    |			]
-    |	}
-    |]
-    |
-    |
-  """.stripMargin
+  val complexJs =
+    """
+      |
+      |[
+      |	{
+      |		"id": "0001",
+      |		"type": "donut",
+      |		"name": "Cake",
+      |		"ppu": 0.55,
+      |		"batters":
+      |			{
+      |				"batter":
+      |					[
+      |						{ "id": "1001", "type": "Regular" },
+      |						{ "id": "1002", "type": "Chocolate" },
+      |						{ "id": "1003", "type": "Blueberry" },
+      |						{ "id": "1004", "type": "Devil's Food" }
+      |					]
+      |			},
+      |		"topping":
+      |			[
+      |				{ "id": "5001", "type": "None" },
+      |				{ "id": "5002", "type": "Glazed" },
+      |				{ "id": "5005", "type": "Sugar" },
+      |				{ "id": "5007", "type": "Powdered Sugar" },
+      |				{ "id": "5006", "type": "Chocolate with Sprinkles" },
+      |				{ "id": "5003", "type": "Chocolate" },
+      |				{ "id": "5004", "type": "Maple" }
+      |			]
+      |	},
+      |	{
+      |		"id": "0002",
+      |		"type": "donut",
+      |		"name": "Raised",
+      |		"ppu": 0.55,
+      |		"batters":
+      |			{
+      |				"batter":
+      |					[
+      |						{ "id": "1001", "type": "Regular" }
+      |					]
+      |			},
+      |		"topping":
+      |			[
+      |				{ "id": "5001", "type": "None" },
+      |				{ "id": "5002", "type": "Glazed" },
+      |				{ "id": "5005", "type": "Sugar" },
+      |				{ "id": "5003", "type": "Chocolate" },
+      |				{ "id": "5004", "type": "Maple" }
+      |			]
+      |	},
+      |	{
+      |		"id": "0003",
+      |		"type": "donut",
+      |		"name": "Old Fashioned",
+      |		"ppu": 0.55,
+      |		"batters":
+      |			{
+      |				"batter":
+      |					[
+      |						{ "id": "1001", "type": "Regular" },
+      |						{ "id": "1002", "type": "Chocolate" }
+      |					]
+      |			},
+      |		"topping":
+      |			[
+      |				{ "id": "5001", "type": "None" },
+      |				{ "id": "5002", "type": "Glazed" },
+      |				{ "id": "5003", "type": "Chocolate" },
+      |				{ "id": "5004", "type": "Maple" }
+      |			]
+      |	}
+      |]
+      |
+      |
+    """.stripMargin
 
 
   val js =
@@ -217,7 +225,7 @@ val complexJs =
       |     ["HPQ" ,"IBM" ,"YHOO" ,"DELL" ,"GOOG"]
       |
       |}
-      |""".stripMargin
+      | """.stripMargin
 
   val simpleJs = """{"a":1}"""
 

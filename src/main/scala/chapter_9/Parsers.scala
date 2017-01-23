@@ -1,10 +1,11 @@
 package chapter_9
 
-import chapter_8.{Gen, Prop}
+import chapter_8.{Gen, Prop, SGen}
+import chapter_9.SimpleParser.Location
 
 import scala.util.matching.Regex
 
-trait Parsers[ParseError, Parser[+ _]] {
+trait Parsers[Parser[+ _]] {
   self =>
 
   def run[A](p: Parser[A])(input: String): Either[ParseError, A]
@@ -83,6 +84,15 @@ trait Parsers[ParseError, Parser[+ _]] {
   def skipThat[A, B](pa: Parser[A])(pb: => Parser[B]): Parser[A] =
     pa.map2(pb)((a, _) => a)
 
+
+  def errorLocation(e: ParseError): Location = ???
+
+  def errorMessage(e: ParseError): String = ???
+
+  def label[A](msg: String)(p: Parser[A]): Parser[A] = ???
+
+  def scope[A](msg: String)(p: Parser[A]): Parser[A] = ???
+
   case class ParserOps[A](p: Parser[A]) {
     def |[B >: A](p2: => Parser[B]): Parser[B] = self.or(p, p2)
 
@@ -134,6 +144,14 @@ trait Parsers[ParseError, Parser[+ _]] {
 
     def productLaw[A](ga: Gen[A], gs: Gen[String]): Prop =
       ga ** gs forAll { case (a, s) => run(succeed(a) ** succeed(a))(s) == Right(a -> a) }
+
+    def labelLaw[A](p: Parser[A], inputs: SGen[String]): Prop =
+      inputs ** Gen.string forAll { case (input, msg) =>
+        run(label(msg)(p))(input) match {
+          case Left(e) => errorMessage(e) == msg
+          case _ => true
+        }
+      }
 
   }
 

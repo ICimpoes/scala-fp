@@ -54,6 +54,11 @@ case class Gen[+A](sample: State[RNG, A]) {
 
 object Gen {
 
+  def stringN(n: Int): Gen[String] =
+    choose(0, 127).map(_.toChar).listOfN(Gen.unit(n)).map(_.mkString)
+
+  val string: SGen[String] = SGen(stringN)
+
   def choose(start: Int, stopExclusive: Int): Gen[Int] =
     Gen(State.nonNegativeLessThan(stopExclusive - start).map(_ + start))
 

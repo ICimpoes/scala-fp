@@ -1,10 +1,8 @@
 package chapter_9
 
-import java.util
-
-import org.scalacheck.{Gen, Properties}
-import org.scalacheck.Prop.forAll
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Prop.forAll
+import org.scalacheck.{Gen, Properties}
 
 
 class ParsersSpec extends Properties("Parsers") {

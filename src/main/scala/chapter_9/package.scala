@@ -5,14 +5,14 @@ package object chapter_9 {
 
   case class ParseError(stack: List[(Location, String)])
 
-  def jsonParser[Parser[+ _]](P: Parsers[Parser]): Parser[JSON] = {
+  def jsonParser[PE, Parser[+ _]](P: Parsers[PE, Parser]): Parser[JSON] = {
     import P._
 
     def jNull = string("null").map(_ => JNull).<*>
 
-    def jNumber: Parser[JNumber] = double.map(JNumber(_)).<*>
+    def jNumber: Parser[JNumber] = double.map(JNumber).<*>
 
-    def jString: Parser[JString] = string.map(JString(_)).<*>
+    def jString: Parser[JString] = string.map(JString).<*>
 
     def jBool: Parser[JBool] = (string("true") | string("false")).map(s => JBool(s.toBoolean)).<*>
 

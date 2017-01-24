@@ -5,7 +5,7 @@ import chapter_9.SimpleParser.Location
 
 import scala.util.matching.Regex
 
-trait Parsers[Parser[+ _]] {
+trait Parsers[ParseError, Parser[+ _]] {
   self =>
 
   def run[A](p: Parser[A])(input: String): Either[ParseError, A]
@@ -84,7 +84,6 @@ trait Parsers[Parser[+ _]] {
   def skipThat[A, B](pa: Parser[A])(pb: => Parser[B]): Parser[A] =
     pa.map2(pb)((a, _) => a)
 
-
   def errorLocation(e: ParseError): Location = ???
 
   def errorMessage(e: ParseError): String = ???
@@ -92,6 +91,8 @@ trait Parsers[Parser[+ _]] {
   def label[A](msg: String)(p: Parser[A]): Parser[A] = ???
 
   def scope[A](msg: String)(p: Parser[A]): Parser[A] = ???
+
+  def attempt[A](p: Parser[A]): Parser[A] = ???
 
   case class ParserOps[A](p: Parser[A]) {
     def |[B >: A](p2: => Parser[B]): Parser[B] = self.or(p, p2)

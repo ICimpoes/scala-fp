@@ -6,7 +6,7 @@ import scala.util.matching.Regex
 
 object SimpleParser {
 
-  case class Location(input: String, offset: Int) {
+  case class Location(input: String, offset: Int = 0) {
 
     def slice(length: Int) = input.slice(offset, offset + length)
 
@@ -21,11 +21,14 @@ object SimpleParser {
       case lineStart => offset - lineStart
     }
 
+    def toError(msg: String): ParseError =
+      ParseError(List((this, msg)))
+
   }
 
   type Parser[+A] = Location => Result[A]
 
-  val parser = new Parsers[Parser] {
+  val parser = new Parsers[F, Parser] {
 
     def run[A](p: Parser[A])(input: String): Either[F, A] =
       p(Location(input, 0)).toEither

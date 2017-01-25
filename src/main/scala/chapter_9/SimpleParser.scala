@@ -23,7 +23,6 @@ object SimpleParser {
 
     def toError(msg: String): ParseError =
       ParseError(List((this, msg)))
-
   }
 
   type Parser[+A] = Location => Result[A]

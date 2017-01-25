@@ -3,8 +3,6 @@ import chapter_9.SimpleParser.Location
 
 package object chapter_9 {
 
-  case class ParseError(stack: List[(Location, String)])
-
   def jsonParser[PE, Parser[+ _]](P: Parsers[PE, Parser]): Parser[JSON] = {
     import P._
 

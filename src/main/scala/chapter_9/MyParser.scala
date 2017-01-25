@@ -1,6 +1,7 @@
 package chapter_9
 
 import chapter_9.MyParser.Parser
+import chapter_9.Res.{Fail, Succ}
 import chapter_9.Result.{F, S}
 import chapter_9.SimpleParser.Location
 
@@ -8,54 +9,57 @@ import scala.util.matching.Regex
 
 class MyParser extends Parsers[ParseError, Parser] {
 
-  def run[A](p: Parser[A])(input: String): Either[ParseError, A] = {
-    p(input) match {
-      case S(a, int) => Right(a)
-      case F(msg) => Left(Location(input).toError(msg))
-    }
+  def run[A](p: Parser[A])(input: String): Either[ParseError, A] =
+    p(Location(input)).toEither
+
+
+  implicit def string(s: String): Parser[String] = location => {
+    if (location.input.startsWith(s)) Succ(s, s.length)
+    else Fail(ParseError(List(location -> s"Expected: $s, found ${location.input}")))
   }
 
-  implicit def string(s: String): Parser[String] = input => {
-    if (input.startsWith(s)) S(s, s.length)
-    else F(s"Expected: $s. Found: $input")
-  }
-
-  def or[A](s1: Parser[A], s2: => Parser[A]): Parser[A] = input => {
-    val res = s1(input)
+  def or[A](s1: Parser[A], s2: => Parser[A]): Parser[A] = location => {
+    val res = s1(location)
     if (res.isSuccess)
       res
     else
-      s2(input)
+      s2(location)
   }
 
-  implicit def regex(r: Regex): Parser[String] = input => {
-    r.findPrefixOf(input) match {
+  implicit def regex(r: Regex): Parser[String] = location => {
+    r.findPrefixOf(location.input) match {
       case Some(str) =>
-        S(str, str.length)
+        Succ(str, str.length)
       case _ =>
-        F(s"${input} does not match: $r")
+        Fail(ParseError(List(location -> s"${location.input} does not match: $r")))
     }
   }
 
-  def flatMap[A, B](p: Parser[A])(f: (A) => Parser[B]): Parser[B] = input => {
-    p(input) match {
-      case S(a, la) =>
-        f(a)(input.drop(la)) match {
-          case S(b, lb) =>
-            S(b, la + lb)
+
+  override def scope[A](msg: String)(p: Parser[A]): Parser[A] =
+    s => p(s).mapError(_.push(s, msg))
+
+  override def succeed[A](a: A): Parser[A] = _ => Succ(a, 0)
+
+  def flatMap[A, B](p: Parser[A])(f: (A) => Parser[B]): Parser[B] = location => {
+    p(location) match {
+      case Succ(a, la) =>
+        f(a)(location.move(la)) match {
+          case Succ(b, lb) =>
+            Succ(b, la + lb)
           case failure =>
             failure
         }
-      case f: F =>
+      case f: Fail =>
         f
     }
   }
 
-  def slice[A](p: Parser[A]): Parser[String] = input => {
-    p(input) match {
-      case S(_, l) =>
-        S(input.take(l), l)
-      case f: F =>
+  def slice[A](p: Parser[A]): Parser[String] = location => {
+    p(location) match {
+      case Succ(_, l) =>
+        Succ(location.slice(l), l)
+      case f: Fail =>
         f
     }
   }
@@ -63,6 +67,6 @@ class MyParser extends Parsers[ParseError, Parser] {
 
 object MyParser {
 
-  type Parser[+A] = String => Result[A]
+  type Parser[+A] = Location => Res[A]
 
 }

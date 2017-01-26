@@ -1,5 +1,4 @@
 import chapter_9.JSON._
-import chapter_9.SimpleParser.Location
 
 package object chapter_9 {
 

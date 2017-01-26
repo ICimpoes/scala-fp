@@ -1,7 +1,6 @@
 package chapter_9
 
 import chapter_8.{Gen, Prop, SGen}
-import chapter_9.SimpleParser.Location
 
 import scala.util.matching.Regex
 

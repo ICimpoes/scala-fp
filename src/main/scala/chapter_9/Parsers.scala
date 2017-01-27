@@ -87,9 +87,9 @@ trait Parsers[ParseError, Parser[+ _]] {
 
   def errorMessage(e: ParseError): String = ???
 
-  def label[A](msg: String)(p: Parser[A]): Parser[A] = ???
+  def label[A](msg: String => String)(p: Parser[A]): Parser[A] = ???
 
-  def scope[A](msg: String)(p: Parser[A]): Parser[A] = ???
+  def scope[A](msg: String => String)(p: Parser[A]): Parser[A] = ???
 
   def attempt[A](p: Parser[A]): Parser[A] = ???
 
@@ -147,7 +147,7 @@ trait Parsers[ParseError, Parser[+ _]] {
 
     def labelLaw[A](p: Parser[A], inputs: SGen[String]): Prop =
       inputs ** Gen.string forAll { case (input, msg) =>
-        run(label(msg)(p))(input) match {
+        run(label(_ => msg)(p))(input) match {
           case Left(e) => errorMessage(e) == msg
           case _ => true
         }

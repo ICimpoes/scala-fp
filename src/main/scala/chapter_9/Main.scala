@@ -114,7 +114,7 @@ object Main extends App {
       |"Price" : 30.66,
       |"Shares outstanding" : 8.38,
       |"Related companies" :
-      |     ["HPQ" ,"IBM" ,"YHOO" ,"DELL" ,"GOOG"]
+      |     ["HPQ" ,"IBM" ,"YHOO" ,"DELL" ,"GOOG"],
       |
       |}
       | """.stripMargin
@@ -140,7 +140,7 @@ object Main extends App {
   import MyParser.{parser => myParser}
   import myParser._
 
-  println(myParser.run(jsonParser(myParser))(complexJs))
+  println(myParser.run(jsonParser(myParser))(js))
 
 
 }

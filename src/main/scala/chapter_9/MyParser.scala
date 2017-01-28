@@ -14,9 +14,9 @@ object MyParser {
       p(Location(input)).toEither
 
 
-    implicit def string(s: String): Parser[String] = scope(in => s"Expected: $s, found $in")(location => {
+    implicit def string(s: String): Parser[String] = scope(in => s"Expected: `$s` found `$in`")(location => {
       if (location.left.startsWith(s)) Succ(s, s.length)
-      else Fail(ParseError(List(location -> s"Expected: $s, found ${location.left}")))
+      else Fail(ParseError(List(location -> s"Expected: `$s` found `${location.left}`")))
     })
 
     def or[A](s1: Parser[A], s2: => Parser[A]): Parser[A] = location =>
@@ -25,12 +25,12 @@ object MyParser {
         case r => r
       }
 
-    implicit def regex(r: Regex): Parser[String] = scope(in => s"$in does not match: $r")(location =>
+    implicit def regex(r: Regex): Parser[String] = scope(in => s"`$in` does not match: `$r`")(location =>
       r.findPrefixOf(location.left) match {
         case Some(str) =>
           Succ(str, str.length)
         case _ =>
-          Fail(ParseError(List(location -> s"${location.left} does not match: $r")))
+          Fail(ParseError(List(location -> s"`${location.left}` does not match: `$r`")))
       })
 
     override def errorLocation(e: ParseError): Location = e.latest.get._1

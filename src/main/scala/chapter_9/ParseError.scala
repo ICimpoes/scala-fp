@@ -11,7 +11,12 @@ case class ParseError(stack: List[(Location, String)] = Nil) {
   def latestLoc: Option[Location] =
     latest map (_._1)
 
+  def latestMsg: Option[String] =
+    latest map (_._2)
+
   def latest: Option[(Location, String)] =
     stack.lastOption
+
+  override def toString = latestMsg.getOrElse("Empty")
 
 }

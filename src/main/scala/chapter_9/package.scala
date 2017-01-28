@@ -30,7 +30,7 @@ package object chapter_9 {
       string.skipThat(':'.<*>).**(jNull | jNumber | jString | jBool | jsObj | jArray).manyWithSeparator(",").map(l => JObject(l.toMap))
     }.skipThat('}').<*>
 
-    jsObj | jArray
+    jsObj
 
   }
 

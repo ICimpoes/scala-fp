@@ -54,6 +54,13 @@ object Monoid {
     override def zero: Option[A] = None
   }
 
+  def dual[A](m: Monoid[A]) = new Monoid[A] {
+
+    override def op(a1: A, a2: A): A = m.op(a2, a1)
+
+    override def zero: A = m.zero
+  }
+
   def endoMonoid[A]: Monoid[A => A] = new Monoid[(A) => A] {
     override def op(a1: (A) => A, a2: (A) => A): (A) => A = a1 compose a2
 

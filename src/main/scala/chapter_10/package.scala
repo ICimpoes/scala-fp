@@ -52,4 +52,43 @@ package object chapter_10 {
     override def zero: Option[Int] = Some(Int.MinValue)
   }
 
+  val wcMonoid: Monoid[WC] = new Monoid[WC] {
+
+    override def op(a1: WC, a2: WC): WC = a1 -> a2 match {
+      case (Stub(c1), Stub(c2)) => Stub(c1 + c2)
+      case (Stub(c1), Part(l, cnt, r)) => Part(c1 + l, cnt, r)
+      case (Part(l, cnt, r), Stub(c2)) => Part(l, cnt, r + c2)
+      case (Part(l1, cnt1, r1), Part(l2, cnt2, r2)) =>
+        if (r1 + l2 nonEmpty) Part(l1, cnt1 + cnt2 + 1, r2)
+        else Part(l1, cnt1 + cnt2, r2)
+
+    }
+
+    override def zero: WC = Stub("")
+
+  }
+
+
+  def wc(s: String): Int = {
+    foldMapV(s, endoMonoid[WC]) { c => {
+      case Stub(str) =>
+        if (c == ' ')
+          Part("", 0, str)
+        else
+          Stub(c + str)
+      case Part(l, cnt, r) =>
+        if (c == ' ')
+          Part("", cnt + (if (l nonEmpty) 1 else 0), r)
+        else
+          Part(c + l, cnt, r)
+    }
+    }(wcMonoid.zero) match {
+      case Part(l, c, r) =>
+        c + (if (l nonEmpty) 1 else 0) + (if (r nonEmpty) 1 else 0)
+      case Stub(str) =>
+        if (str nonEmpty) 1 else 0
+    }
+  }
+
+
 }

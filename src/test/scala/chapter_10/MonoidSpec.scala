@@ -12,4 +12,13 @@ class MonoidSpec extends FlatSpec with Matchers {
     ordered(IndexedSeq(5, 4, 3, 2, 1)) shouldBe false
     ordered(IndexedSeq(Int.MinValue, Int.MinValue, Int.MinValue + 1, Int.MaxValue)) shouldBe true
   }
+
+  "Monoid.wc" should "return correct word count" in {
+    wc("") shouldBe 0
+    wc("      ") shouldBe 0
+    wc("11 2 1 2") shouldBe 4
+    wc("   111  2   1   2   ") shouldBe 4
+    wc("1111 1111  11111  21111   11111   11 12   ") shouldBe 7
+    wc("1111 1111  11111  21111   11111   11 12   1") shouldBe 8
+  }
 }

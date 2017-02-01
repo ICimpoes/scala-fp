@@ -21,4 +21,13 @@ class MonoidSpec extends FlatSpec with Matchers {
     wc("1111 1111  11111  21111   11111   11 12   ") shouldBe 7
     wc("1111 1111  11111  21111   11111   11 12   1") shouldBe 8
   }
+
+  "Monoid.wc2" should "return correct word count" in {
+    wc2("") shouldBe 0
+    wc2("      ") shouldBe 0
+    wc2("11 2 1 2") shouldBe 4
+    wc2("   111  2   1   2   ") shouldBe 4
+    wc2("1111 1111  11111  21111   11111   11 12   ") shouldBe 7
+    wc2("1111 1111  11111  21111   11111   11 12   1") shouldBe 8
+  }
 }

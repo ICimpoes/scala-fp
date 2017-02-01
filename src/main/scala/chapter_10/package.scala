@@ -91,4 +91,15 @@ package object chapter_10 {
   }
 
 
+  def wc2(string: String): Int = {
+    type WC = (String, Int)
+    foldMapV(string, endoMonoid[WC]){c => {
+      case (s, i) if c == ' ' => "" -> (i + (if (s nonEmpty) 1 else 0))
+      case (s, i) => c + s -> i
+    }}("" -> 0) match {
+      case ("", i) => i
+      case (_, i) => i + 1
+    }
+  }
+
 }

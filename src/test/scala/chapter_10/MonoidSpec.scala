@@ -1,8 +1,18 @@
 package chapter_10
 
+import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
-class MonoidSpec extends FlatSpec with Matchers {
+class MonoidSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
+
+  val wcTest = Table(("string", "word count"),
+    ("", 0),
+    ("      ", 0),
+    ("11 2 1 2", 4),
+    ("   111  2   1   2   ", 4),
+    ("1111 1111  11111  21111   11111   11 12   ", 7),
+    ("1111 1111  11111  21111   11111   11 12   1", 8)
+  )
 
   "Monoid.ordered" should "return correct value for asc ord" in {
     ordered(IndexedSeq(0, 1, 2, 3, 3, 4, 5, 5, 5)) shouldBe true
@@ -14,20 +24,19 @@ class MonoidSpec extends FlatSpec with Matchers {
   }
 
   "Monoid.wc" should "return correct word count" in {
-    wc("") shouldBe 0
-    wc("      ") shouldBe 0
-    wc("11 2 1 2") shouldBe 4
-    wc("   111  2   1   2   ") shouldBe 4
-    wc("1111 1111  11111  21111   11111   11 12   ") shouldBe 7
-    wc("1111 1111  11111  21111   11111   11 12   1") shouldBe 8
+    forAll(wcTest) { (in, res) =>
+      wc(in) shouldBe res
+    }
   }
 
   "Monoid.wc2" should "return correct word count" in {
-    wc2("") shouldBe 0
-    wc2("      ") shouldBe 0
-    wc2("11 2 1 2") shouldBe 4
-    wc2("   111  2   1   2   ") shouldBe 4
-    wc2("1111 1111  11111  21111   11111   11 12   ") shouldBe 7
-    wc2("1111 1111  11111  21111   11111   11 12   1") shouldBe 8
+    forAll(wcTest) { (in, res) =>
+      wc2(in) shouldBe res
+    }
+  }
+  "Monoid.wc3" should "return correct word count" in {
+    forAll(wcTest) { (in, res) =>
+      wc3(in) shouldBe res
+    }
   }
 }

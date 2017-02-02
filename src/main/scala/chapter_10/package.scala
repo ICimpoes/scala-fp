@@ -68,6 +68,7 @@ package object chapter_10 {
 
   }
 
+  def unsub(string: String) = string.length min 1
 
   def wc(s: String): Int = {
     foldMapV(s, endoMonoid[WC]) { c => {
@@ -78,28 +79,38 @@ package object chapter_10 {
           Stub(c + str)
       case Part(l, cnt, r) =>
         if (c == ' ')
-          Part("", cnt + (if (l nonEmpty) 1 else 0), r)
+          Part("", cnt + unsub(l), r)
         else
           Part(c + l, cnt, r)
     }
-    }(wcMonoid.zero) match {
-      case Part(l, c, r) =>
-        c + (if (l nonEmpty) 1 else 0) + (if (r nonEmpty) 1 else 0)
-      case Stub(str) =>
-        if (str nonEmpty) 1 else 0
-    }
+    }(wcMonoid.zero) toInt
   }
 
 
   def wc2(string: String): Int = {
     type WC = (String, Int)
     foldMapV(string, endoMonoid[WC]){c => {
-      case (s, i) if c == ' ' => "" -> (i + (if (s nonEmpty) 1 else 0))
+      case (s, i) if c == ' ' => "" -> (i + unsub(s))
       case (s, i) => c + s -> i
     }}("" -> 0) match {
       case ("", i) => i
       case (_, i) => i + 1
     }
+  }
+
+  def wc3(string: String): Int = {
+
+    def go(s: String): WC = {
+      if (s.length <= 2) {
+        if (s.contains(" ")) if(s.startsWith(" ")) Part("", 0, s.trim) else Part(s.trim, 0, "")
+        else Stub(s)
+      } else {
+        val (l, r) = s.splitAt(s.length / 2)
+        wcMonoid.op(go(l), go(r))
+      }
+    }
+
+    go(string) toInt
   }
 
 }

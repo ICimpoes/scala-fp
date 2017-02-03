@@ -30,7 +30,7 @@ object Tree {
     case Branch(l, r) => Branch(map(l)(f), map(r)(f))
   }
 
-  def fold[A, B](tree: Tree[A])(f: A => B)(g: (B,B) => B): B = tree match {
+  def fold[A, B](tree: Tree[A])(f: A => B)(g: (B, B) => B): B = tree match {
     case Leaf(a) => f(a)
     case Branch(l, r) => g(fold(l)(f)(g), fold(r)(f)(g))
   }
@@ -46,5 +46,23 @@ object Tree {
 
   def mapUsingFold[A, B](tree: Tree[A])(f: A => B): Tree[B] =
     fold(tree)(a => Leaf(f(a)): Tree[B])((l, r) => Branch(l, r))
+
+  case class TreeOps[+A](inst: Tree[A]) extends AnyVal {
+    def size: Int = Tree.size(inst)
+
+    def depth: Int = Tree.depth(inst)
+
+    def map[B](f: A => B): Tree[B] = Tree.map(inst)(f: A => B)
+
+    def fold[B](f: A => B)(g: (B, B) => B): B = Tree.fold(inst)(f: A => B)(g: (B, B) => B)
+
+    def sizeUsingFold: Int = Tree.sizeUsingFold(inst)
+
+    def depthUsingFold: Int = Tree.depthUsingFold(inst)
+
+    def mapUsingFold[B](f: A => B): Tree[B] = Tree.mapUsingFold(inst)(f: A => B)
+  }
+
+  implicit def treeToTreeOps[A](tree: Tree[A]): TreeOps[A] = TreeOps(tree)
 
 }

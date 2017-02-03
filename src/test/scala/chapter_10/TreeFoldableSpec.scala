@@ -13,10 +13,10 @@ class TreeFoldableSpec extends FlatSpec with Matchers {
     Foldable.foldableTree.foldLeft(leaf)(1)(_ - _) shouldBe -9
   }
   "TreeFoldable.foldRight" should "return correct value" in {
-    Foldable.foldableTree.foldRight(tree)(1)(_ - _) shouldBe -16
+    Foldable.foldableTree.foldRight(tree)(1)(_ - _) shouldBe -2
     Foldable.foldableTree.foldRight(leaf)(1)(_ - _) shouldBe 9
   }
-  "TreeFoldable.foldMap()" should "return correct value" in {
+  "TreeFoldable.foldMap" should "return correct value" in {
     Foldable.foldableTree.foldMap(tree)(_ - 2)(Monoid.intAddition) shouldBe 9
     Foldable.foldableTree.foldMap(leaf)(_ - 2)(Monoid.intAddition) shouldBe 8
   }

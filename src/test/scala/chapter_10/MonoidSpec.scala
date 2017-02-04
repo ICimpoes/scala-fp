@@ -39,4 +39,7 @@ class MonoidSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
       wc3(in) shouldBe res
     }
   }
+  "productMonoid" should "return product of two monoids" in {
+    foldMap(List("1", "2", "3"), productMonoid(Monoid.stringMonoid, Monoid.intMultiplication))(s => s -> s.toInt) shouldBe "123" -> 6
+  }
 }

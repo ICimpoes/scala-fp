@@ -1,5 +1,6 @@
 package chapter_10
 
+import chapter_10.Monoid._
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -40,6 +41,20 @@ class MonoidSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
     }
   }
   "productMonoid" should "return product of two monoids" in {
-    foldMap(List("1", "2", "3"), productMonoid(Monoid.stringMonoid, Monoid.intMultiplication))(s => s -> s.toInt) shouldBe "123" -> 6
+    foldMap(List("1", "2", "3"), productMonoid(stringMonoid, intMultiplication))(s => s -> s.toInt) shouldBe "123" -> 6
+  }
+  "mergeMonoid" should "merge nested maps" in {
+    val M: Monoid[Map[String, Map[String, Int]]] = mapMergeMonoid(mapMergeMonoid(intAddition))
+    val map1 = Map("k1" -> Map("1" -> 1, "2" -> 2), "k2" -> Map("1" -> 10, "3" -> 30))
+    val map2 = Map("k1" -> Map("2" -> 2), "k3" -> Map("1" -> 100))
+    M.op(map1, map2) should contain theSameElementsAs Map(
+      "k1" -> Map("1" -> 1, "2" -> 4),
+      "k2" -> Map("1" -> 10, "3" -> 30),
+      "k3" -> Map("1" -> 100))
+  }
+
+  "bag" should "create a bag out of Seq" in {
+    val seq = IndexedSeq("a", "b", "c", "a", 1, 2, 1, "c", "a")
+    bag(seq) shouldBe Map("a" -> 3, "b" -> 1, "c" -> 2, 1 -> 2, 2 -> 1)
   }
 }

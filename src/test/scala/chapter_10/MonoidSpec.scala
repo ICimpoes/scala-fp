@@ -57,4 +57,13 @@ class MonoidSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
     val seq = IndexedSeq("a", "b", "c", "a", 1, 2, 1, "c", "a")
     bag(seq) shouldBe Map("a" -> 3, "b" -> 1, "c" -> 2, 1 -> 2, 2 -> 1)
   }
+
+  "mean" should "be correctly calculated using monoids" in {
+    val seq = IndexedSeq(1, 2, 3, 4, 5, 6)
+    val m = productMonoid(intAddition, intAddition)
+    val (l, s) = foldMap(seq, m)(a => (1, a))
+    s shouldBe seq.sum
+    l shouldBe seq.size
+    s / l shouldBe chapter_4.mean(seq.map(_.toDouble)).get.toInt
+  }
 }

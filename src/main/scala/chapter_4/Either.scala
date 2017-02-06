@@ -18,6 +18,11 @@ sealed trait Either[+E, +A] {
     case _ => b
   }
 
+  def get: A = this match {
+    case Right(v) => v
+    case _ => throw new Exception("Cannot get from left side")
+  }
+
   def map2[EE >: E, B, C](maybeB: Either[EE, B])(f: (A, B) => C): Either[EE, C] = this -> maybeB match {
     case (Right(a), Right(b)) => Right(f(a, b))
     case (Right(a), l@Left(_)) => l

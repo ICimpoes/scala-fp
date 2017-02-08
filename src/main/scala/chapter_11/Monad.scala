@@ -1,14 +1,5 @@
 package chapter_11
 
-import chapter_3.List
-import chapter_4._
-import chapter_5.Stream
-import chapter_6.State
-import chapter_7.Par
-import chapter_7.Par.Par
-import chapter_8.Gen
-import chapter_9.MyParser.{Parser, parser}
-
 trait Monad[F[_]] extends Functor[F] {
   def unit[A](a: => A): F[A]
 
@@ -19,9 +10,35 @@ trait Monad[F[_]] extends Functor[F] {
 
   def map2[A, B, C](ma: F[A], mb: F[B])(f: (A, B) => C): F[C] =
     flatMap(ma)(a => map(mb)(b => f(a, b)))
+
+  def sequence[A](lma: List[F[A]]): F[List[A]] =
+    lma.foldRight(unit(List.empty[A]))((fa, list) => map2(fa, list)(_ :: _))
+
+  def traverse[A, B](la: List[A])(f: A => F[B]): F[List[B]] =
+    la.foldRight(unit(List.empty[B]))((a, list) => map2(f(a), list)(_ :: _))
+
+  def replicateM1[A](n: Int, ma: F[A]): F[List[A]] =
+    if (n <= 0) unit(Nil)
+    else map2(ma, replicateM1(n - 1, ma))(_ :: _)
+
+  def replicateM[A](n: Int, ma: F[A]): F[List[A]] =
+    sequence(List.fill(n)(ma))
+
+  def product[A, B](ma: F[A], mb: F[B]): F[(A, B)] = map2(ma, mb)((_, _))
 }
 
 object Monad {
+
+  import chapter_3.List
+  import chapter_4._
+  import chapter_5.Stream
+  import chapter_6.State
+  import chapter_7.Par
+  import chapter_7.Par.Par
+  import chapter_8.Gen
+  import chapter_9.MyParser.{Parser, parser}
+
+
   val genMonad = new Monad[Gen] {
     def unit[A](a: => A): Gen[A] = Gen.unit(a)
 

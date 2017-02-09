@@ -19,4 +19,9 @@ class MonadSpec extends FlatSpec with Matchers {
     Monad.optionMonad.traverse(List(1, 2, 3))(i => if (i == 3) None else Some(i)) shouldBe None
   }
 
+  "Monad.filterM" should "filter List using A => F[Boolean]" in {
+    Monad.optionMonad.filterM(List(1, 2, 3, 4))(i => if (i <= 2) Some(true) else Some(false)) shouldBe Some(List(1, 2))
+    Monad.optionMonad.filterM(List(1, 2, 3, 4))(i => if (i <= 2) Some(true) else None) shouldBe None
+  }
+
 }

@@ -25,6 +25,13 @@ trait Monad[F[_]] extends Functor[F] {
     sequence(List.fill(n)(ma))
 
   def product[A, B](ma: F[A], mb: F[B]): F[(A, B)] = map2(ma, mb)((_, _))
+
+  def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] =
+    ms.foldRight(unit(List.empty[A]))((a, fList) => map2(f(a), fList) { (cond, list) =>
+      if (cond) a :: list
+      else list
+    })
+
 }
 
 object Monad {

@@ -23,5 +23,15 @@ class MonadSpec extends FlatSpec with Matchers {
     Monad.optionMonad.filterM(List(1, 2, 3, 4))(i => if (i <= 2) Some(true) else Some(false)) shouldBe Some(List(1, 2))
     Monad.optionMonad.filterM(List(1, 2, 3, 4))(i => if (i <= 2) Some(true) else None) shouldBe None
   }
+  "Monad.compose" should "compose Int => Option[Int] and Int => Option[String]" in {
+    val f: Int => Option[Int] = Some(_)
+    def g(i: Int) = {
+      if (i >= 0) Some(s"i = $i")
+      else None
+    }
+    Monad.optionMonad.compose(f, g)(-1) shouldBe None
+    Monad.optionMonad.compose((_: Int) => None, g)(0) shouldBe None
+    Monad.optionMonad.compose(f, g)(0) shouldBe Some("i = 0")
+  }
 
 }

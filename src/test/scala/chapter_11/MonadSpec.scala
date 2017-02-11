@@ -32,6 +32,15 @@ class MonadSpec extends FlatSpec with Matchers {
     Monad.optionMonad.compose(f, g)(-1) shouldBe None
     Monad.optionMonad.compose((_: Int) => None, g)(0) shouldBe None
     Monad.optionMonad.compose(f, g)(0) shouldBe Some("i = 0")
+
+    Monad.optionMonad.composeUsingJoin(f, g)(-1) shouldBe None
+    Monad.optionMonad.composeUsingJoin((_: Int) => None, g)(0) shouldBe None
+    Monad.optionMonad.composeUsingJoin(f, g)(0) shouldBe Some("i = 0")
+  }
+  "Monad.join" should "correctly join Option[Option[A]]" in {
+    Monad.optionMonad.join(Some(None)) shouldBe None
+    Monad.optionMonad.join(Some(Some(1))) shouldBe Some(1)
+    Monad.optionMonad.join(None) shouldBe None
   }
 
 }

@@ -55,6 +55,7 @@ object Monad {
   import chapter_4._
   import chapter_5.Stream
   import chapter_6.State
+  import chapter_6.State._
   import chapter_7.Par
   import chapter_7.Par.Par
   import chapter_8.Gen
@@ -102,6 +103,25 @@ object Monad {
     override def unit[A](a: => A): State[S, A] = State(a -> _)
 
     override def flatMap[A, B](ma: State[S, A])(f: (A) => State[S, B]): State[S, B] = ma.flatMap(f)
+  }
+
+  def zipWithIndex[A](as: scala.List[A]): scala.List[(Int, A)] =
+    as.foldLeft(stateMonad[Int].unit(scala.List[(Int, A)]()))((acc, a) => for {
+      xs <- acc
+      n <- get
+      _ <- set(n + 1)
+    } yield (n, a) :: xs).run(0)._1.reverse
+
+  trait Ops[F[_], A] {
+    def self: F[A]
+
+    def flatMap[B](f: A => F[B])(implicit ev: Monad[F]): F[B] = ev.flatMap(self)(f)
+  }
+
+  object Ops {
+    implicit def toAllMonad[F[_], A](target: F[A])(implicit ev: Monad[F]) = new Ops[F, A] {
+      override def self = target
+    }
   }
 
 }

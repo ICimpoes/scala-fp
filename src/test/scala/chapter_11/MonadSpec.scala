@@ -42,5 +42,9 @@ class MonadSpec extends FlatSpec with Matchers {
     Monad.optionMonad.join(Some(Some(1))) shouldBe Some(1)
     Monad.optionMonad.join(None) shouldBe None
   }
+  "Monad.zipWithIndex" should "zip a list with index using State Monad" in {
+    Monad.zipWithIndex(List("1", "2", "3")) shouldBe List(0 -> "1", 1 -> "2", 2 -> "3")
+    Monad.zipWithIndex(Nil) shouldBe Nil
+  }
 
 }

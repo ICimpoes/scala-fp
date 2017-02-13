@@ -125,3 +125,21 @@ object Monad {
   }
 
 }
+
+final case class Kleisli[F[_], A, B](run: A => F[B]) { self =>
+
+  def apply(a: A): F[B] = run(a)
+
+  def map[C](f: B => C)(implicit F: Monad[F]): Kleisli[F, A, C] =
+    Kleisli(a => F.map(run(a))(f))
+
+  def flatMap[C](f: B => Kleisli[F, A, C])(implicit F: Monad[F]): Kleisli[F, A, C] =
+    Kleisli((r: A) => F.flatMap[B, C](run(r))((b: B) => f(b).run(r)))
+
+  def compose[Z](f: Z => F[A])(implicit F: Monad[F]): Kleisli[F, Z, B] =
+    Kleisli((z: Z) => F.flatMap(f(z))(run))
+}
+
+object Kleisli {
+  implicit def lift[F[_], A, B](run: A => F[B]) = Kleisli(run)
+}

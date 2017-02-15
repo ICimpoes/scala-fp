@@ -23,7 +23,7 @@ trait Applicative[F[_]] extends Functor[F] {
                           fb: F[B],
                           fc: F[C],
                           fd: F[D])(f: (A, B, C, D) => E): F[E] =
-    apply(apply(apply(apply(unit(f.curried))(fa))(fb))(fc))
+    apply(apply(apply(apply(unit(f.curried))(fa))(fb))(fc))(fd)
 
   //(A => B => C)(A) = B => C
   //(B => C)(B) = C

@@ -57,7 +57,7 @@ object Applicative {
 }
 
 trait Monad[F[_]] extends Applicative[F] {
-  def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = join(map(fa)(f))
+  def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
 
   def join[A](ffa: F[F[A]]): F[A] = flatMap(ffa)(fa => fa)
 
@@ -71,3 +71,12 @@ trait Monad[F[_]] extends Applicative[F] {
     flatMap(fa)(a => map(fb)(b => f(a, b)))
 }
 
+object Monad {
+
+  def eitherMonad[E] = new Monad[({type f[x] = Either[E, x]})#f] {
+    override def unit[A](a: => A): Either[E, A] = Right(a)
+
+    override def flatMap[A, B](fa: Either[E, A])(f: (A) => Either[E, B]): Either[E, B] = fa.flatMap(f)
+  }
+
+}

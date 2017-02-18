@@ -12,5 +12,11 @@ class ApplicativeSpec extends FlatSpec with Matchers {
     product.map(None -> Left[String, Int]("12"))(_ + 1) shouldBe (None, Left("12"))
 
   }
+  "Applicative.compose" should "compose two applicatives" in {
+    def composed[E] = optionApplicative.compose[({type f[x] = Either[E, x]})#f](eitherApplicative)
+    composed.map(Some(Right(12)))(_ + 1) shouldBe Some(Right(13))
+    composed.map[Int, Int](None)(_ + 1) shouldBe None
+    composed.map[Int, Int](Some(Left[String, Int]("1")))(_ + 1) shouldBe Some(Left[String, Int]("1"))
+  }
 
 }

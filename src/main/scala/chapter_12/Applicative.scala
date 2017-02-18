@@ -2,7 +2,8 @@ package chapter_12
 
 import chapter_11.Functor
 
-trait Applicative[F[_]] extends Functor[F] { self =>
+trait Applicative[F[_]] extends Functor[F] {
+  self =>
 
   def unit[A](a: => A): F[A]
 
@@ -28,13 +29,16 @@ trait Applicative[F[_]] extends Functor[F] { self =>
   //(A => B => C)(A) = B => C
   //(B => C)(B) = C
   def map2_[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] =
-    apply[B, C](map(fa)(f.curried))(fb)
+  apply[B, C](map(fa)(f.curried))(fb)
 
   def traverse[A, B](as: List[A])(f: A => F[B]): F[List[B]] =
     as.foldRight(unit(List[B]()))((a, fbs) => map2(f(a), fbs)(_ :: _))
 
   def sequence[A](fas: List[F[A]]): F[List[A]] =
     traverse(fas)(identity)
+
+  def sequenceMap[K, V](ofa: Map[K, F[V]]): F[Map[K, V]] =
+    ofa.foldLeft(unit(Map.empty[K, V])) { case (fa, (k, fv)) => map2(fa, fv)((a, v) => a + (k -> v)) }
 
   def replicateM[A](n: Int, fa: F[A]): F[List[A]] =
     sequence(List.fill(n)(fa))
@@ -51,6 +55,14 @@ trait Applicative[F[_]] extends Functor[F] { self =>
 
   }
 
+  def compose[G[_]](G: Applicative[G]): Applicative[({type f[x] = F[G[x]]})#f] =
+    new Applicative[({type f[x] = F[G[x]]})#f] {
+
+      override def unit[A](a: => A): F[G[A]] = self.unit(G.unit(a))
+
+      override def map2[A, B, C](fa: F[G[A]], fb: F[G[B]])(f: (A, B) => C): F[G[C]] =
+        self.map2(fa, fb)((ga, gb) => G.map2(ga, gb)(f))
+    }
 
 }
 

@@ -29,7 +29,7 @@ trait Applicative[F[_]] extends Functor[F] {
   //(A => B => C)(A) = B => C
   //(B => C)(B) = C
   def map2_[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] =
-  apply[B, C](map(fa)(f.curried))(fb)
+    apply[B, C](map(fa)(f.curried))(fb)
 
   def traverse[A, B](as: List[A])(f: A => F[B]): F[List[B]] =
     as.foldRight(unit(List[B]()))((a, fbs) => map2(f(a), fbs)(_ :: _))
@@ -67,7 +67,10 @@ trait Applicative[F[_]] extends Functor[F] {
 }
 
 object Applicative {
-  val streamApplicative = new Applicative[Stream] {
+
+  def apply[F[_]: Applicative]: Applicative[F] = implicitly[Applicative[F]]
+
+  implicit val streamApplicative = new Applicative[Stream] {
 
     def unit[A](a: => A): Stream[A] =
       Stream.continually(a)
@@ -77,7 +80,7 @@ object Applicative {
       a zip b map f.tupled
   }
 
-  val optionApplicative = new Applicative[Option] {
+  implicit val optionApplicative = new Applicative[Option] {
     override def unit[A](a: => A): Option[A] = Option(a)
 
     override def map2[A, B, C](fa: Option[A], fb: Option[B])(f: (A, B) => C): Option[C] =
@@ -87,7 +90,7 @@ object Applicative {
       } yield f(a, b)
   }
 
-  def eitherApplicative[E] = new Applicative[({type f[x] = Either[E, x]})#f] {
+  implicit def eitherApplicative[E] = new Applicative[({type f[x] = Either[E, x]})#f] {
     override def unit[A](a: => A): Either[E, A] = Right(a)
 
     override def map2[A, B, C](fa: Either[E, A], fb: Either[E, B])(f: (A, B) => C): Either[E, C] =

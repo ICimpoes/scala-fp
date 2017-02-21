@@ -1,6 +1,12 @@
 package chapter_11
 
-trait Monad[F[_]] extends Functor[F] {
+import chapter_12.Applicative
+
+trait Monad[F[_]] extends Applicative[F] {
+
+  override def map[A, B](fa: F[A])(f: A => B): F[B] =
+   flatMap(fa)((a: A) => unit(f(a)))
+
   def unit[A](a: => A): F[A]
 
   def flatMap[A, B](ma: F[A])(f: A => F[B]): F[B]
@@ -11,26 +17,12 @@ trait Monad[F[_]] extends Functor[F] {
   def flatMapUsingJoin[A, B](ma: F[A])(f: A => F[B]): F[B] =
     join(map(ma)(f))
 
-  def map[A, B](ma: F[A])(f: A => B): F[B] =
-    flatMap(ma)(a => unit(f(a)))
-
   def map2[A, B, C](ma: F[A], mb: F[B])(f: (A, B) => C): F[C] =
     flatMap(ma)(a => map(mb)(b => f(a, b)))
-
-  def sequence[A](lma: List[F[A]]): F[List[A]] =
-    lma.foldRight(unit(List.empty[A]))((fa, list) => map2(fa, list)(_ :: _))
-
-  def traverse[A, B](la: List[A])(f: A => F[B]): F[List[B]] =
-    la.foldRight(unit(List.empty[B]))((a, list) => map2(f(a), list)(_ :: _))
 
   def replicateM1[A](n: Int, ma: F[A]): F[List[A]] =
     if (n <= 0) unit(Nil)
     else map2(ma, replicateM1(n - 1, ma))(_ :: _)
-
-  def replicateM[A](n: Int, ma: F[A]): F[List[A]] =
-    sequence(List.fill(n)(ma))
-
-  def product[A, B](ma: F[A], mb: F[B]): F[(A, B)] = map2(ma, mb)((_, _))
 
   def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] =
     ms.foldRight(unit(List.empty[A]))(
@@ -103,6 +95,12 @@ object Monad {
     override def unit[A](a: => A): State[S, A] = State(a -> _)
 
     override def flatMap[A, B](ma: State[S, A])(f: (A) => State[S, B]): State[S, B] = ma.flatMap(f)
+  }
+
+  def eitherMonad[E] = new Monad[({type f[x] = Either[E, x]})#f] {
+    override def unit[A](a: => A): Either[E, A] = Right(a)
+
+    override def flatMap[A, B](fa: Either[E, A])(f: (A) => Either[E, B]): Either[E, B] = fa.flatMap(f)
   }
 
   def zipWithIndex[A](as: scala.List[A]): scala.List[(Int, A)] =

@@ -1,6 +1,6 @@
 package chapter_12
 
-import chapter_11.Functor
+import chapter_11.{Functor, Id}
 import chapter_3.{Branch, Leaf, Tree}
 
 trait Traverse[F[_]] extends Functor[F] {
@@ -11,6 +11,12 @@ trait Traverse[F[_]] extends Functor[F] {
   def sequence[G[_] : Applicative, A](fga: F[G[A]]): G[F[A]] =
     traverse(fga)(identity)
 
+  def map[A,B](fa: F[A])(f: A => B): F[B] =
+    traverse(fa)(a => Id(f(a))).a
+
+//  override def foldMap[A, M](as: F[A])(f: A => M)(mb: Monoid[M]): M =
+//    traverse[({type f[x] = Const[M, x]})#f, A, Nothing](
+//      as)(f)(Monoid.monoidApplicative(mb))
 }
 
 object Traverse {

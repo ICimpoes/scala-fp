@@ -27,5 +27,9 @@ class TraverseSpec extends FlatSpec with Matchers {
     Traverse.treeTraverse.traverse[Option, Int, String](Leaf(1))(i => Some(i.toString)) shouldBe Some(Leaf("1"))
 
   }
+  "Traverse.map" should "map over option" in {
+    Traverse.optionTraverse.map(Some(1))(_.toString) shouldBe Some("1")
+    Traverse.optionTraverse.map(None)(identity) shouldBe None
+  }
 
 }

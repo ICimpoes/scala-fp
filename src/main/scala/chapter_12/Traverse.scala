@@ -1,9 +1,11 @@
 package chapter_12
 
+import chapter_10.Monoid.Const
+import chapter_10.{Foldable, Monoid}
 import chapter_11.{Functor, Id}
 import chapter_3.{Branch, Leaf, Tree}
 
-trait Traverse[F[_]] extends Functor[F] {
+trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
 
   def traverse[G[_] : Applicative, A, B](fa: F[A])(f: A => G[B]): G[F[B]] =
     sequence(map(fa)(f))
@@ -14,9 +16,9 @@ trait Traverse[F[_]] extends Functor[F] {
   def map[A,B](fa: F[A])(f: A => B): F[B] =
     traverse(fa)(a => Id(f(a))).a
 
-//  override def foldMap[A, M](as: F[A])(f: A => M)(mb: Monoid[M]): M =
-//    traverse[({type f[x] = Const[M, x]})#f, A, Nothing](
-//      as)(f)(Monoid.monoidApplicative(mb))
+  override def foldMap[A, M](as: F[A])(f: A => M)(mb: Monoid[M]): M =
+    traverse[({type f[x] = Const[M, x]})#f, A, Nothing](
+      as)(f)(Monoid.monoidApplicative(mb))
 }
 
 object Traverse {

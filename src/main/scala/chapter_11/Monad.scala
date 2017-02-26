@@ -54,50 +54,50 @@ object Monad {
   import chapter_9.MyParser.{Parser, parser}
 
 
-  val genMonad = new Monad[Gen] {
+  implicit val genMonad = new Monad[Gen] {
     def unit[A](a: => A): Gen[A] = Gen.unit(a)
 
     def flatMap[A, B](ma: Gen[A])(f: A => Gen[B]): Gen[B] =
       ma flatMap f
   }
 
-  val parMonad = new Monad[Par] {
+  implicit val parMonad = new Monad[Par] {
     override def unit[A](a: => A): Par[A] = Par.unit(a)
 
     override def flatMap[A, B](ma: Par[A])(f: (A) => Par[B]): Par[B] = Par.flatMap(ma)(f)
   }
 
-  val parserMonad = new Monad[Parser] {
+  implicit val parserMonad = new Monad[Parser] {
     override def unit[A](a: => A): Parser[A] = parser.succeed(a)
 
     override def flatMap[A, B](ma: Parser[A])(f: (A) => Parser[B]): Parser[B] = parser.flatMap(ma)(f)
   }
 
-  val optionMonad = new Monad[Option] {
+  implicit val optionMonad = new Monad[Option] {
     override def unit[A](a: => A): Option[A] = Some(a)
 
     override def flatMap[A, B](ma: Option[A])(f: (A) => Option[B]): Option[B] = ma.flatMap(f)
   }
 
-  val streamMonad = new Monad[Stream] {
+  implicit val streamMonad = new Monad[Stream] {
     override def unit[A](a: => A): Stream[A] = Stream(a)
 
     override def flatMap[A, B](ma: Stream[A])(f: (A) => Stream[B]): Stream[B] = ma.flatMap(f)
   }
 
-  val listMonad = new Monad[List] {
-    override def unit[A](a: => A): List[A] = List(a)
+  implicit val listMonad = new Monad[scala.List] {
+    override def unit[A](a: => A): scala.List[A] = scala.List(a)
 
-    override def flatMap[A, B](ma: List[A])(f: (A) => List[B]): List[B] = List.flatMap(ma)(f)
+    override def flatMap[A, B](ma: scala.List[A])(f: (A) => scala.List[B]): scala.List[B] = ma.flatMap(f)
   }
 
-  def stateMonad[S] = new Monad[({type L[?] = State[S, ?]})#L] {
+  implicit def stateMonad[S] = new Monad[({type L[?] = State[S, ?]})#L] {
     override def unit[A](a: => A): State[S, A] = State(a -> _)
 
     override def flatMap[A, B](ma: State[S, A])(f: (A) => State[S, B]): State[S, B] = ma.flatMap(f)
   }
 
-  def eitherMonad[E] = new Monad[({type f[x] = Either[E, x]})#f] {
+  implicit def eitherMonad[E] = new Monad[({type f[x] = Either[E, x]})#f] {
     override def unit[A](a: => A): Either[E, A] = Right(a)
 
     override def flatMap[A, B](fa: Either[E, A])(f: (A) => Either[E, B]): Either[E, B] = fa.flatMap(f)

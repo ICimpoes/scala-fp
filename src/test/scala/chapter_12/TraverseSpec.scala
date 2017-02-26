@@ -9,6 +9,7 @@ class TraverseSpec extends FlatSpec with Matchers {
   val tree: Tree[Int] = Branch(Branch(Leaf(2), Leaf(3)), Branch(Leaf(1), Leaf(4)))
 
   import chapter_12.Applicative.optionApplicative
+  import chapter_11.Monad.listMonad
 
   "Traverse.listTraverse" should "traverse List[Option] to Option[List]" in {
 
@@ -58,5 +59,11 @@ class TraverseSpec extends FlatSpec with Matchers {
   }
   "Traverse.foldLeft_" should "correctly fold a traversable" in {
     Traverse.listTraverse.foldLeft_(List(1, 2, 3, 4, 5))("Start: ")((s, i) => s"$s, $i") shouldBe "Start: , 1, 2, 3, 4, 5"
+  }
+  "Traverse.zip" should "correctly zip a traversable" in {
+    Traverse.treeTraverse.zip(tree, tree) shouldBe tree.map(i => i -> i)
+  }
+  "Traverse.fuse" should "correctly fuse a traversable" in {
+    Traverse.treeTraverse.fuse[Option, List, Int, String](tree)(a => Option(a.toString), a => List(a.toString)) shouldBe (Some(tree.map(_.toString)), List(tree.map(_.toString)))
   }
 }

@@ -40,12 +40,12 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
     }.run(Nil)._2.reverse
 
   def toList_[A](fa: F[A]): List[A] =
-    mapAccum[A, List[A], Unit](fa)((a, l) => ((), a :: l))(Nil)._2.reverse
+    mapAccum[A, List[A], Unit](fa)(Nil)((a, l) => ((), a :: l))._2.reverse
 
   def zipWithIndex_[A](ta: F[A]): F[(A, Int)] =
-    mapAccum[A, Int, (A, Int)](ta)((a, i: Int) => (a -> i) -> (i + 1))(0)._1
+    mapAccum[A, Int, (A, Int)](ta)(0)((a, i: Int) => (a -> i) -> (i + 1))._1
 
-  def mapAccum[A, B, R](fa: F[A])(f: (A, B) => (R, B))(z: B): (F[R], B) =
+  def mapAccum[A, B, R](fa: F[A])(z: B)(f: (A, B) => (R, B)): (F[R], B) =
     traverseS(fa) { (a: A) =>
       for {
         b <- get[B]
@@ -55,10 +55,23 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
     }.run(z)
 
   def reverse[A](fa: F[A]): F[A] =
-    mapAccum[A, List[A], A](fa)( (_, b) => (b.head, b.tail))(toList(fa).reverse)._1
+    mapAccum[A, List[A], A](fa)(toList(fa).reverse)( (_, b) => (b.head, b.tail))._1
 
   def foldLeft_[A, B](as: F[A])(z: B)(f: (B, A) => B): B =
-    mapAccum[A, B, Unit](as)((a, b) => () -> f(b, a))(z)._2
+    mapAccum[A, B, Unit](as)(z)((a, b) => () -> f(b, a))._2
+
+  def zip[A, B](fa: F[A], fb: F[B]): F[(A, B)] =
+    mapAccum(fa)(toList(fb)) {
+      case (a, Nil) => sys.error("zip: Incompatible shapes.")
+      case (a, b :: bs) => ((a, b), bs)
+    }._1
+
+  def fuse[G[_], H[_], A, B](fa: F[A])(f: A => G[B], g: A => H[B])
+                            (implicit G: Applicative[G], H: Applicative[H]): (G[F[B]], H[F[B]]) ={
+    implicit val productF = G.productF(H)
+    traverse[({type f[x] = (G[x], H[x])})#f, A, B](fa)(a => productF.map(f(a) -> g(a))(identity))
+  }
+
 }
 
 object Traverse {

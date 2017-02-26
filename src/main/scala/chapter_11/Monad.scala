@@ -1,6 +1,6 @@
 package chapter_11
 
-import chapter_12.Applicative
+import chapter_12.{Applicative, Traverse}
 
 trait Monad[F[_]] extends Applicative[F] {
 
@@ -43,7 +43,6 @@ trait Monad[F[_]] extends Applicative[F] {
 
 object Monad {
 
-  import chapter_3.List
   import chapter_4._
   import chapter_5.Stream
   import chapter_6.State
@@ -52,6 +51,16 @@ object Monad {
   import chapter_7.Par.Par
   import chapter_8.Gen
   import chapter_9.MyParser.{Parser, parser}
+
+  def composeM[F[_], G[_]](implicit F: Monad[F], G: Monad[G], T: Traverse[G]): Monad[({type f[x] = F[G[x]]})#f] = new Monad[({type f[x] = F[G[x]]})#f] {
+
+    override def unit[A](a: => A): F[G[A]] =
+      F.unit(G.unit(a))
+
+    override def flatMap[A, B](ma: F[G[A]])(f: A => F[G[B]]) =
+      F.flatMap(ma)(ga => F.map(T.traverse(ga)(f))(G.join))
+  }
+
 
 
   implicit val genMonad = new Monad[Gen] {

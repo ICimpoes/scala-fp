@@ -2,6 +2,8 @@ package chapter_11
 
 import chapter_4._
 import org.scalatest.{FlatSpec, Matchers}
+import chapter_11.Monad._
+import chapter_12.Traverse.listTraverse
 
 class MonadSpec extends FlatSpec with Matchers {
 
@@ -46,5 +48,9 @@ class MonadSpec extends FlatSpec with Matchers {
     Monad.zipWithIndex(List("1", "2", "3")) shouldBe List(0 -> "1", 1 -> "2", 2 -> "3")
     Monad.zipWithIndex(Nil) shouldBe Nil
   }
-
+  "Monad.composeM" should "compose two monads" in {
+    Monad.composeM(optionMonad, listMonad, listTraverse).map(Some(List(1, 2)))(i => (i + 1).toString) shouldBe Some(List("2", "3"))
+    Monad.composeM(optionMonad, listMonad, listTraverse).map(Some(Nil))(identity) shouldBe Some(Nil)
+    Monad.composeM(optionMonad, listMonad, listTraverse).map(None)(identity) shouldBe None
+  }
 }

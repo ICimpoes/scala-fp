@@ -7,7 +7,7 @@ import chapter_3.{Branch, Leaf, Tree}
 import chapter_6.State
 import chapter_6.State._
 
-trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
+trait Traverse[F[_]] extends Functor[F] with Foldable[F] { self =>
 
   def traverse[G[_] : Applicative, A, B](fa: F[A])(f: A => G[B]): G[F[B]] =
     sequence(map(fa)(f))
@@ -67,10 +67,18 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
     }._1
 
   def fuse[G[_], H[_], A, B](fa: F[A])(f: A => G[B], g: A => H[B])
-                            (implicit G: Applicative[G], H: Applicative[H]): (G[F[B]], H[F[B]]) ={
+                            (implicit G: Applicative[G], H: Applicative[H]): (G[F[B]], H[F[B]]) = {
     implicit val productF = G.productF(H)
     traverse[({type f[x] = (G[x], H[x])})#f, A, B](fa)(a => productF.map(f(a) -> g(a))(identity))
   }
+
+  def compose[G[_]](implicit G: Traverse[G]): Traverse[({type f[x] = F[G[x]]})#f] = new Traverse[({type f[x] = F[G[x]]})#f] {
+    override def traverse[H[_] : Applicative, A, B](fa: F[G[A]])(f: (A) => H[B]): H[F[G[B]]] = {
+      self.traverse(fa)(ga => G.traverse(ga)(f))
+    }
+
+  }
+
 
 }
 

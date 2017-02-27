@@ -119,6 +119,20 @@ object Monad {
       _ <- set(n + 1)
     } yield (n, a) :: xs).run(0)._1.reverse
 
+
+  case class OptionT[M[_], A](value: M[Option[A]])(implicit M: Monad[M]) {
+
+    def map[B](f: A => B): OptionT[M, B] =
+      flatMap(a => OptionT(M.unit(Some(f(a)))))
+
+    def flatMap[B](f: A => OptionT[M, B]): OptionT[M, B] =
+      OptionT(M.flatMap(value) {
+        case None => M.unit(None)
+        case Some(a) => f(a).value
+      })
+
+  }
+
   trait Ops[F[_], A] {
     def self: F[A]
 

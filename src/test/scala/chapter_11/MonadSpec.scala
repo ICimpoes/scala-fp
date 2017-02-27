@@ -53,4 +53,9 @@ class MonadSpec extends FlatSpec with Matchers {
     Monad.composeM(optionMonad, listMonad, listTraverse).map(Some(Nil))(identity) shouldBe Some(Nil)
     Monad.composeM(optionMonad, listMonad, listTraverse).map(None)(identity) shouldBe None
   }
+  "Monad.OptionT" should "flatMap over M[Option[_]]" in {
+    OptionT[({type f[x] = Either[String, x]})#f, Int](Right(Some(12)))(eitherMonad[String]).map(_.toString).value shouldBe Right(Some("12"))
+    OptionT[({type f[x] = Either[String, x]})#f, Int](Right(None))(eitherMonad[String]).map(_.toString).value shouldBe Right(None)
+    OptionT[({type f[x] = Either[String, x]})#f, Int](Left("12"))(eitherMonad[String]).map(_.toString).value shouldBe Left("12")
+  }
 }

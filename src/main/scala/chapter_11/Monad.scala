@@ -1,6 +1,12 @@
 package chapter_11
 
-trait Monad[F[_]] extends Functor[F] {
+import chapter_12.{Applicative, Traverse}
+
+trait Monad[F[_]] extends Applicative[F] {
+
+  override def map[A, B](fa: F[A])(f: A => B): F[B] =
+   flatMap(fa)((a: A) => unit(f(a)))
+
   def unit[A](a: => A): F[A]
 
   def flatMap[A, B](ma: F[A])(f: A => F[B]): F[B]
@@ -11,26 +17,12 @@ trait Monad[F[_]] extends Functor[F] {
   def flatMapUsingJoin[A, B](ma: F[A])(f: A => F[B]): F[B] =
     join(map(ma)(f))
 
-  def map[A, B](ma: F[A])(f: A => B): F[B] =
-    flatMap(ma)(a => unit(f(a)))
-
   def map2[A, B, C](ma: F[A], mb: F[B])(f: (A, B) => C): F[C] =
     flatMap(ma)(a => map(mb)(b => f(a, b)))
-
-  def sequence[A](lma: List[F[A]]): F[List[A]] =
-    lma.foldRight(unit(List.empty[A]))((fa, list) => map2(fa, list)(_ :: _))
-
-  def traverse[A, B](la: List[A])(f: A => F[B]): F[List[B]] =
-    la.foldRight(unit(List.empty[B]))((a, list) => map2(f(a), list)(_ :: _))
 
   def replicateM1[A](n: Int, ma: F[A]): F[List[A]] =
     if (n <= 0) unit(Nil)
     else map2(ma, replicateM1(n - 1, ma))(_ :: _)
-
-  def replicateM[A](n: Int, ma: F[A]): F[List[A]] =
-    sequence(List.fill(n)(ma))
-
-  def product[A, B](ma: F[A], mb: F[B]): F[(A, B)] = map2(ma, mb)((_, _))
 
   def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] =
     ms.foldRight(unit(List.empty[A]))(
@@ -51,7 +43,6 @@ trait Monad[F[_]] extends Functor[F] {
 
 object Monad {
 
-  import chapter_3.List
   import chapter_4._
   import chapter_5.Stream
   import chapter_6.State
@@ -61,48 +52,64 @@ object Monad {
   import chapter_8.Gen
   import chapter_9.MyParser.{Parser, parser}
 
+  def composeM[F[_], G[_]](implicit F: Monad[F], G: Monad[G], T: Traverse[G]): Monad[({type f[x] = F[G[x]]})#f] = new Monad[({type f[x] = F[G[x]]})#f] {
 
-  val genMonad = new Monad[Gen] {
+    override def unit[A](a: => A): F[G[A]] =
+      F.unit(G.unit(a))
+
+    override def flatMap[A, B](ma: F[G[A]])(f: A => F[G[B]]) =
+      F.flatMap(ma)(ga => F.map(T.traverse(ga)(f))(G.join))
+  }
+
+
+
+  implicit val genMonad = new Monad[Gen] {
     def unit[A](a: => A): Gen[A] = Gen.unit(a)
 
     def flatMap[A, B](ma: Gen[A])(f: A => Gen[B]): Gen[B] =
       ma flatMap f
   }
 
-  val parMonad = new Monad[Par] {
+  implicit val parMonad = new Monad[Par] {
     override def unit[A](a: => A): Par[A] = Par.unit(a)
 
     override def flatMap[A, B](ma: Par[A])(f: (A) => Par[B]): Par[B] = Par.flatMap(ma)(f)
   }
 
-  val parserMonad = new Monad[Parser] {
+  implicit val parserMonad = new Monad[Parser] {
     override def unit[A](a: => A): Parser[A] = parser.succeed(a)
 
     override def flatMap[A, B](ma: Parser[A])(f: (A) => Parser[B]): Parser[B] = parser.flatMap(ma)(f)
   }
 
-  val optionMonad = new Monad[Option] {
+  implicit val optionMonad = new Monad[Option] {
     override def unit[A](a: => A): Option[A] = Some(a)
 
     override def flatMap[A, B](ma: Option[A])(f: (A) => Option[B]): Option[B] = ma.flatMap(f)
   }
 
-  val streamMonad = new Monad[Stream] {
+  implicit val streamMonad = new Monad[Stream] {
     override def unit[A](a: => A): Stream[A] = Stream(a)
 
     override def flatMap[A, B](ma: Stream[A])(f: (A) => Stream[B]): Stream[B] = ma.flatMap(f)
   }
 
-  val listMonad = new Monad[List] {
-    override def unit[A](a: => A): List[A] = List(a)
+  implicit val listMonad = new Monad[scala.List] {
+    override def unit[A](a: => A): scala.List[A] = scala.List(a)
 
-    override def flatMap[A, B](ma: List[A])(f: (A) => List[B]): List[B] = List.flatMap(ma)(f)
+    override def flatMap[A, B](ma: scala.List[A])(f: (A) => scala.List[B]): scala.List[B] = ma.flatMap(f)
   }
 
-  def stateMonad[S] = new Monad[({type L[?] = State[S, ?]})#L] {
+  implicit def stateMonad[S] = new Monad[({type L[?] = State[S, ?]})#L] {
     override def unit[A](a: => A): State[S, A] = State(a -> _)
 
     override def flatMap[A, B](ma: State[S, A])(f: (A) => State[S, B]): State[S, B] = ma.flatMap(f)
+  }
+
+  implicit def eitherMonad[E] = new Monad[({type f[x] = Either[E, x]})#f] {
+    override def unit[A](a: => A): Either[E, A] = Right(a)
+
+    override def flatMap[A, B](fa: Either[E, A])(f: (A) => Either[E, B]): Either[E, B] = fa.flatMap(f)
   }
 
   def zipWithIndex[A](as: scala.List[A]): scala.List[(Int, A)] =
@@ -111,6 +118,20 @@ object Monad {
       n <- get
       _ <- set(n + 1)
     } yield (n, a) :: xs).run(0)._1.reverse
+
+
+  case class OptionT[M[_], A](value: M[Option[A]])(implicit M: Monad[M]) {
+
+    def map[B](f: A => B): OptionT[M, B] =
+      flatMap(a => OptionT(M.unit(Some(f(a)))))
+
+    def flatMap[B](f: A => OptionT[M, B]): OptionT[M, B] =
+      OptionT(M.flatMap(value) {
+        case None => M.unit(None)
+        case Some(a) => f(a).value
+      })
+
+  }
 
   trait Ops[F[_], A] {
     def self: F[A]

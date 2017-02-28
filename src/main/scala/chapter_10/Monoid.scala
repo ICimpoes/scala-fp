@@ -1,5 +1,6 @@
 package chapter_10
 
+import chapter_12.Applicative
 import chapter_8.{Gen, Prop}
 
 trait Monoid[A] {
@@ -99,5 +100,14 @@ object Monoid {
 
   def bag[A](as: IndexedSeq[A]): Map[A, Int] =
     foldMapV(as, mapMergeMonoid[A, Int](intAddition))(a => Map(a -> 1))
+
+  type Const[M, B] = M
+
+  implicit def monoidApplicative[M](M: Monoid[M]) =
+    new Applicative[({type f[x] = Const[M, x]})#f] {
+      def unit[A](a: => A): M = M.zero
+
+      def map2[A, B, C](m1: M, m2: M)(f: (A, B) => C): M = M.op(m1, m2)
+    }
 
 }

@@ -137,6 +137,8 @@ object Monad {
     def self: F[A]
 
     def flatMap[B](f: A => F[B])(implicit ev: Monad[F]): F[B] = ev.flatMap(self)(f)
+
+    def **[B](fb: F[B])(implicit ev: Monad[F]): F[(A, B)] = ev.product(self, fb)
   }
 
   object Ops {

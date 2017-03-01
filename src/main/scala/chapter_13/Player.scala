@@ -32,7 +32,7 @@ object Contest {
   def contest3(p1: Player, p2: Player): Unit =
     println(winnerMsg(winner(p1, p2)))
 
-  def contest4(p1: Player, p2: Player): IO =
+  def contest4(p1: Player, p2: Player): IO[Unit] =
     IO.PrintLine(winnerMsg(winner(p1, p2)))
 
 }

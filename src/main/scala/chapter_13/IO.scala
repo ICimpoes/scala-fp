@@ -43,7 +43,12 @@ object IO {
     _ <- if (ok) doWhile(a)(cond) else ev.unit(())
   } yield ()
 
-  def when[A, F[_]](cond: Boolean)(implicit ev: Monad[F]): F[Boolean] = ev.unit(true)
+  def when[A, F[_]](cond: Boolean)(f: => F[A])(implicit ev: Monad[F]): F[Boolean] = {
+    if (cond) f
+    ev.unit(cond)
+  }
+
+  def sequence_[A, F[_]](fs: F[A]*)(implicit ev: Monad[F]): F[Unit] = foreachM(fs.toStream)(skip(_))
 
   def forever[A, F[_]](a: F[A])(implicit ev: Monad[F]): F[A] = {
     lazy val t: F[A] = forever(a)
@@ -56,7 +61,7 @@ object IO {
       case _ => ev.unit(z)
     }
 
-  def skip[A, F[_]](fa: F[A])(implicit ev: Monad[F]): F[Unit] = fa.flatMap(_ => ev.unit(()))
+  def skip[A, F[_]](fa: F[A])(implicit ev: Monad[F]): F[Unit] = fa.map(_ => ())
 
   def foldM_[A, B, F[_]](l: Stream[A])(z: B)(f: (B, A) => F[B])(implicit ev: Monad[F]): F[Unit] =
     skip { foldM(l)(z)(f) }
@@ -66,11 +71,22 @@ object IO {
     foldM_(l)(())((u, a) => skip(f(a)))
 
 
-  def PrintLine(line: String) = IO(println(line))
+  def PrintLine(line: Any) = IO(println(line))
 
   val ReadLine: IO[String] = IO(io.StdIn.readLine())
 
   val empty: IO[Unit] = IO[Unit](())
+
+  case class Ref[A](var a: A) { self =>
+    def modify(f: A => A) = {
+      a = f(a)
+      IO(self)
+    }
+    def set[B](b: B) = IO(Ref(b))
+    def get = IO(a)
+  }
+
+  def ref[A](value: A) = IO[Ref[A]](Ref(value))
 
   val echo = ReadLine.flatMap(PrintLine)
 

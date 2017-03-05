@@ -43,10 +43,8 @@ object IO {
     _ <- if (ok) doWhile(a)(cond) else ev.unit(())
   } yield ()
 
-  def when[A, F[_]](cond: Boolean)(f: => F[A])(implicit ev: Monad[F]): F[Boolean] = {
-    if (cond) f
-    ev.unit(cond)
-  }
+  def when[A, F[_]](cond: Boolean)(f: => F[A])(implicit ev: Monad[F]): F[Boolean] =
+    if (cond) f.map(_ => true) else ev.unit(cond)
 
   def sequence_[A, F[_]](fs: F[A]*)(implicit ev: Monad[F]): F[Unit] = foreachM(fs.toStream)(skip(_))
 

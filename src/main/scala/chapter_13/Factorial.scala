@@ -1,7 +1,6 @@
 package chapter_13
 
 import chapter_13.IO._
-import chapter_11.Monad._
 
 object Factorial extends App {
 
@@ -19,9 +18,10 @@ object Factorial extends App {
       ReadLine
     } { line =>
       when[Unit, IO](line != "q") {
+        val in = line.toInt
         for {
-          n <- factorial(line.toInt)
-          _ <- PrintLine(s"Factorial: $n")
+          n <- factorial(in)
+          _ <- PrintLine(s"Factorial of $in is: $n")
         } yield ()
       }
     })

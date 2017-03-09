@@ -1,6 +1,7 @@
 package chapter_13
 
 import chapter_13.IO._
+import chapter_11.MonadOps._
 
 object Factorial extends App {
 

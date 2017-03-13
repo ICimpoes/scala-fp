@@ -50,12 +50,33 @@ object Free {
     }
   }
 
+  @annotation.tailrec
+  def step[F[_], A](a: Free[F, A])(implicit F: Monad[F]): Free[F, A] = a match {
+    case FlatMap(FlatMap(x, f), g) => step(x flatMap (a => f(a) flatMap g))
+    case FlatMap(Return(x), f) => step(f(x))
+    case _ => a
+  }
+
+  def run[F[_], A](a: Free[F, A])(implicit F: Monad[F]): F[A] = step(a) match {
+    case Return(fa) => F.unit(fa)
+    case Suspend(r) => r
+    case FlatMap(Suspend(r), f) => F.flatMap(r)(a => run(f(a)))
+  }
 
 
 }
 
 object FreeApp extends App {
 
+
+  import Monad.Ops._
+
+  implicit val f0Monad = new Monad[Function0] {
+
+    def unit[A](a: => A): () => A = () => a
+
+    def flatMap[A, B](ma: () => A)(f: (A) => () => B): () => B = f(ma())
+  }
 
   import Free._
 
@@ -64,5 +85,7 @@ object FreeApp extends App {
 
   println(runTrampoline(fM))
 
+
+  println(run(fM).apply())
 
 }

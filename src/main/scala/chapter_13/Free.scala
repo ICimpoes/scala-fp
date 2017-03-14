@@ -51,7 +51,7 @@ object Free {
   }
 
   @annotation.tailrec
-  def step[F[_], A](a: Free[F, A])(implicit F: Monad[F]): Free[F, A] = a match {
+  def step[F[_], A](a: Free[F, A]): Free[F, A] = a match {
     case FlatMap(FlatMap(x, f), g) => step(x flatMap (a => f(a) flatMap g))
     case FlatMap(Return(x), f) => step(f(x))
     case _ => a
@@ -63,6 +63,36 @@ object Free {
     case FlatMap(Suspend(r), f) => F.flatMap(r)(a => run(f(a)))
   }
 
+  def runFree[F[_], G[_], A](free: Free[F, A])(t: F ~> G)(implicit G: Monad[G]): G[A] =
+    step(free) match {
+      case Return(a) => G.unit(a)
+      case Suspend(r) => t(r)
+      case FlatMap(Suspend(r), f) => G.flatMap(t(r))(a => runFree(f(a))(t))
+      case _ => sys.error("Impossible; `step` eliminates these cases")
+    }
+
+  trait Translate[F[_], G[_]] {
+    def apply[A](f: F[A]): G[A]
+  }
+
+  type ~>[F[_], G[_]] = Translate[F, G]
+
+  def translate[F[_], G[_], A](f: Free[F, A])(fg: F ~> G): Free[G, A] = {
+    type freeG[x] = Free[G, x]
+    val trans = new ~>[F, freeG] {
+      override def apply[x](f: F[x]): freeG[x] =
+        Suspend(fg(f))
+    }
+    runFree(f)(trans)(freeMonad[G])
+  }
+
+
+  implicit val f0Monad = new Monad[Function0] {
+
+    def unit[A](a: => A): () => A = () => a
+
+    def flatMap[A, B](ma: () => A)(f: (A) => () => B): () => B = f(ma())
+  }
 
 }
 
@@ -71,12 +101,6 @@ object FreeApp extends App {
 
   import Monad.Ops._
 
-  implicit val f0Monad = new Monad[Function0] {
-
-    def unit[A](a: => A): () => A = () => a
-
-    def flatMap[A, B](ma: () => A)(f: (A) => () => B): () => B = f(ma())
-  }
 
   import Free._
 

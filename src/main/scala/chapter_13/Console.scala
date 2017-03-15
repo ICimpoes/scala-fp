@@ -11,6 +11,8 @@ sealed trait Console[A] {
   def toPar: Par[A]
 
   def toThunk: () => A
+
+  def toReader: ConsoleReader[A]
 }
 
 
@@ -22,12 +24,16 @@ object Console {
     def toThunk = () => run
 
     def run: Option[String] = Try(readLine()).toOption
+
+    def toReader: ConsoleReader[Option[String]] = ConsoleReader(Some(_))
   }
 
   case class PrintLine(line: String) extends Console[Unit] {
     def toPar = Par.lazyUnit(println(line))
 
     def toThunk = () => println(line)
+
+    def toReader: ConsoleReader[Unit] = ConsoleReader(_ => ())
   }
 
   type ConsoleIO[A] = Free[Console, A]
@@ -54,7 +60,15 @@ object Console {
       def apply[A](a: Console[A]) = a.toPar
     }
 
-//    def runConsole[A](a: ConsoleIO[A]): A =
+  def runConsole[A](a: ConsoleIO[A]): A =
+    Free.runTrampoline(translate(a)(consoleToFunction0))
+
+  val consoleToReader = new (Console ~> ConsoleReader) {
+    def apply[A](a: Console[A]) = a.toReader
+  }
+
+  def runConsoleReader[A](io: ConsoleIO[A]): ConsoleReader[A] =
+    runFree[Console, ConsoleReader, A](io)(consoleToReader)
 
 }
 

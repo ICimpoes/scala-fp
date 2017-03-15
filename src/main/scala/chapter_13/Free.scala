@@ -68,7 +68,6 @@ object Free {
       case Return(a) => G.unit(a)
       case Suspend(r) => t(r)
       case FlatMap(Suspend(r), f) => G.flatMap(t(r))(a => runFree(f(a))(t))
-      case _ => sys.error("Impossible; `step` eliminates these cases")
     }
 
   trait Translate[F[_], G[_]] {
@@ -97,9 +96,6 @@ object Free {
 }
 
 object FreeApp extends App {
-
-
-  import Monad.Ops._
 
 
   import Free._

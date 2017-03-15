@@ -13,21 +13,23 @@ sealed trait Console[A] {
   def toThunk: () => A
 }
 
-case object ReadLine extends Console[Option[String]] {
-  def toPar = Par.lazyUnit(run)
-
-  def toThunk = () => run
-
-  def run: Option[String] = Try(readLine()).toOption
-}
-
-case class PrintLine(line: String) extends Console[Unit] {
-  def toPar = Par.lazyUnit(println(line))
-
-  def toThunk = () => println(line)
-}
 
 object Console {
+
+  case object ReadLine extends Console[Option[String]] {
+    def toPar = Par.lazyUnit(run)
+
+    def toThunk = () => run
+
+    def run: Option[String] = Try(readLine()).toOption
+  }
+
+  case class PrintLine(line: String) extends Console[Unit] {
+    def toPar = Par.lazyUnit(println(line))
+
+    def toThunk = () => println(line)
+  }
+
   type ConsoleIO[A] = Free[Console, A]
 
   def readLn: ConsoleIO[Option[String]] =
@@ -52,7 +54,7 @@ object Console {
       def apply[A](a: Console[A]) = a.toPar
     }
 
-//  def runConsole[A](a: Free[Console, A]): A
+//    def runConsole[A](a: ConsoleIO[A]): A =
 
 }
 

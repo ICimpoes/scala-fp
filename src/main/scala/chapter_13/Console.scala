@@ -13,6 +13,8 @@ sealed trait Console[A] {
   def toThunk: () => A
 
   def toReader: ConsoleReader[A]
+
+  def toState: ConsoleState[A]
 }
 
 
@@ -26,6 +28,8 @@ object Console {
     def run: Option[String] = Try(readLine()).toOption
 
     def toReader: ConsoleReader[Option[String]] = ConsoleReader(Some(_))
+
+    def toState: ConsoleState[Option[String]] = ConsoleState(b => b.in.headOption -> b.copy(in = b.in.drop(1)))
   }
 
   case class PrintLine(line: String) extends Console[Unit] {
@@ -34,6 +38,8 @@ object Console {
     def toThunk = () => println(line)
 
     def toReader: ConsoleReader[Unit] = ConsoleReader(_ => ())
+
+    def toState: ConsoleState[Unit] = ConsoleState(b => () -> b.copy(out = b.out.:+(line)))
   }
 
   type ConsoleIO[A] = Free[Console, A]
@@ -69,6 +75,13 @@ object Console {
 
   def runConsoleReader[A](io: ConsoleIO[A]): ConsoleReader[A] =
     runFree[Console, ConsoleReader, A](io)(consoleToReader)
+
+  val consoleToState = new (Console ~> ConsoleState) {
+    def apply[A](a: Console[A]) = a.toState
+  }
+
+  def runConsoleState[A](io: ConsoleIO[A]): ConsoleState[A] =
+    runFree[Console,ConsoleState,A](io)(consoleToState)
 
 }
 

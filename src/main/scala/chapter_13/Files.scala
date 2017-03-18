@@ -1,20 +1,25 @@
 package chapter_13
 
+import chapter_13.Files._
 import chapter_13.Free._
 
 trait Files[A]
 
-case class OpenRead(file: String) extends Files[HandleR]
+object Files {
 
-case class OpenWrite(file: String) extends Files[HandleW]
+  case class OpenRead(file: String) extends Files[HandleR]
 
-case class ReadLine(h: HandleR) extends Files[Option[String]]
+  case class OpenWrite(file: String) extends Files[HandleW]
 
-case class WriteLine(h: HandleW, line: String) extends Files[Unit]
+  case class ReadLine(h: HandleR) extends Files[Option[String]]
 
-trait HandleR
+  case class WriteLine(h: HandleW, line: String) extends Files[Unit]
 
-trait HandleW
+  trait HandleR
+
+  trait HandleW
+
+}
 
 object ConvertApp extends App {
 

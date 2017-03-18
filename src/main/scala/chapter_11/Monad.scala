@@ -61,8 +61,6 @@ object Monad {
       F.flatMap(ma)(ga => F.map(T.traverse(ga)(f))(G.join))
   }
 
-
-
   implicit val genMonad = new Monad[Gen] {
     def unit[A](a: => A): Gen[A] = Gen.unit(a)
 
@@ -119,7 +117,6 @@ object Monad {
       _ <- set(n + 1)
     } yield (n, a) :: xs).run(0)._1.reverse
 
-
   case class OptionT[M[_], A](value: M[Option[A]])(implicit M: Monad[M]) {
 
     def map[B](f: A => B): OptionT[M, B] =
@@ -137,6 +134,10 @@ object Monad {
     def self: F[A]
 
     def flatMap[B](f: A => F[B])(implicit ev: Monad[F]): F[B] = ev.flatMap(self)(f)
+
+    def map[B](f: A => B)(implicit ev: Monad[F]): F[B] = ev.map(self)(f)
+
+    def **[B](fb: F[B])(implicit ev: Monad[F]): F[(A, B)] = ev.product(self, fb)
   }
 
   object Ops {
@@ -163,4 +164,42 @@ final case class Kleisli[F[_], A, B](run: A => F[B]) { self =>
 
 object Kleisli {
   implicit def lift[F[_], A, B](run: A => F[B]) = Kleisli(run)
+}
+
+object  MonadOps {
+
+  import chapter_11.Monad.Ops._
+
+  def doWhile[A, F[_]](a: F[A])(cond: A => F[Boolean])(implicit ev: Monad[F]): F[Unit] = for {
+    a1 <- a
+    ok <- cond(a1)
+    _ <- if (ok) doWhile(a)(cond) else ev.unit(())
+  } yield ()
+
+  def when[A, F[_]](cond: Boolean)(f: => F[A])(implicit ev: Monad[F]): F[Boolean] =
+    if (cond) f.map(_ => true) else ev.unit(cond)
+
+  def sequence_[A, F[_]](fs: F[A]*)(implicit ev: Monad[F]): F[Unit] = foreachM(fs.toStream)(skip(_))
+
+  def forever[A, F[_]](a: F[A])(implicit ev: Monad[F]): F[A] = {
+    lazy val t: F[A] = forever(a)
+    a flatMap (_ => t)
+  }
+
+  def foldM[A, B, F[_]](l: Stream[A])(z: B)(f: (B, A) => F[B])(implicit ev: Monad[F]): F[B] =
+    l match {
+      case h #:: t => f(z, h) flatMap (z2 => foldM(t)(z2)(f))
+      case _ => ev.unit(z)
+    }
+
+  def skip[A, F[_]](fa: F[A])(implicit ev: Monad[F]): F[Unit] = fa.map(_ => ())
+
+  def foldM_[A, B, F[_]](l: Stream[A])(z: B)(f: (B, A) => F[B])(implicit ev: Monad[F]): F[Unit] =
+    skip {
+      foldM(l)(z)(f)
+    }
+
+
+  def foreachM[A, F[_]](l: Stream[A])(f: A => F[Unit])(implicit ev: Monad[F]): F[Unit] =
+    foldM_(l)(())((u, a) => skip(f(a)))
 }

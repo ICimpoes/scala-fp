@@ -1,6 +1,7 @@
 package chapter_14
 
-sealed trait ST[S, A] { self =>
+sealed trait ST[S, A] {
+  self =>
   protected def run(s: S): (A, S)
 
   def map[B](f: A => B) = new ST[S, B] {
@@ -30,16 +31,24 @@ object ST {
   implicit def runToST[S, A](f: S => (A, S)) = new ST[S, A] {
     override protected def run(s: S): (A, S) = f(s)
   }
+
+  def runST[A](st: RunnableST[A]): A =
+    st.apply[Unit].run(())._1
 }
 
 sealed trait STRef[S, A] {
   protected var cell: A
 
-  def Read: ST[S, A] = ST(cell)
+  def read: ST[S, A] = ST(cell)
 
-  def Write(a: A): ST[S, Unit] = (s: S) => {
+  def write(a: A): ST[S, Unit] = (s: S) => {
     cell = a
     () -> s
   }
 }
 
+object STRef {
+  def apply[S, A](a: A): ST[S, STRef[S, A]] = ST(new STRef[S, A] {
+    var cell: A = a
+  })
+}

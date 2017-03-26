@@ -74,6 +74,15 @@ sealed abstract class STArray[S, A: ClassTag] {
     case (s, (i, a)) =>
       s.flatMap(_ => write(i, a))
   }
+
+  def swap(i: Int, j: Int): ST[S, Unit] = for {
+    x <- read(i)
+    y <- read(j)
+    _ <- write(i, y)
+    _ <- write(j, x)
+  } yield ()
+
+
 }
 
 object STArray {
@@ -81,5 +90,31 @@ object STArray {
   def apply[S, A: ClassTag](sz: Int, v: A): ST[S, STArray[S, A]] = ST(new STArray[S, A] {
     lazy val value: Array[A] = Array.fill(sz)(v)
   })
+
+  def fromList[S, A: ClassTag](xs: List[A]): ST[S, STArray[S, A]] = ST(new STArray[S, A] {
+    lazy val value = xs.toArray
+  })
+
+  def partition[S](arr: STArray[S, Int],
+                   n: Int, r: Int, pivot: Int): ST[S, Int] = {
+    var j = n
+    for {
+      piv <- arr.read(pivot)
+      _ = println(piv)
+      _ <- arr.swap(pivot, r)
+      _ = for (i <- n.until(r)) {
+        for {
+          vi <- arr.read(i)
+          _ <- {
+            if (piv < vi) {
+              j += 1
+              arr.swap(i, j)
+            } else ST[S, Int](0)
+          }
+        } yield ()
+      }
+    } yield j
+  }
+
 
 }

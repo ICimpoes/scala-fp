@@ -1,5 +1,7 @@
 package chapter_14
 
+import chapter_14.Util._
+
 import scala.reflect.ClassTag
 
 sealed trait ST[S, A] {
@@ -85,7 +87,19 @@ sealed abstract class STArray[S, A: ClassTag] {
 
 }
 
+
+object Util {
+
+  case class Debug(debug: Boolean)
+
+  def noop[S] = ST[S,Unit](())
+
+  def debug(any: Any)(implicit d: Debug) = if (d.debug) println(any)
+
+}
+
 object STArray {
+
 
   def apply[S, A: ClassTag](sz: Int, v: A): ST[S, STArray[S, A]] = ST(new STArray[S, A] {
     lazy val value: Array[A] = Array.fill(sz)(v)
@@ -96,25 +110,27 @@ object STArray {
   })
 
   def partition[S](arr: STArray[S, Int],
-                   n: Int, r: Int, pivot: Int): ST[S, Int] = {
-    var j = n
+                   n: Int, r: Int, pivot: Int)(implicit d: Debug): ST[S, Int] = {
     for {
       piv <- arr.read(pivot)
-      _ = println(piv)
       _ <- arr.swap(pivot, r)
-      _ = for (i <- n.until(r)) {
+      j <- STRef[S, Int](n)
+      _ <- (n until r).foldLeft(noop[S])((s, i) =>
         for {
-          vi <- arr.read(i)
+          _ <- s
+          c <- arr.read(i)
           _ <- {
-            if (piv < vi) {
-              j += 1
-              arr.swap(i, j)
-            } else ST[S, Int](0)
+            if (c < piv) for {
+              b <- j.read
+              _ <- arr.swap(i, b)
+              _ <- j.write(b + 1)
+            } yield ()
+            else noop[S]
           }
-        } yield ()
-      }
-    } yield j
+        } yield ())
+      a <- j.read
+      _ <- arr.swap(r, a)
+    } yield a
   }
-
 
 }

@@ -1,5 +1,7 @@
 package chapter_14
 
+import chapter_14.Util._
+
 object STApp extends App {
 
 //  val p = new RunnableST[(Int, Int)] {
@@ -32,15 +34,17 @@ object STApp extends App {
 //      x6 <- a.read(6)
 //    } yield println(s"$x0 $x1 $x2 $x3 $x4 $x5 $x6")
 //  })
+implicit val _ = Debug(false)
 
   ST.runST(new RunnableST[List[Int]] {
     override def apply[S]: ST[S, List[Int]] = {
       for {
-        arr <- STArray.fromList[S, Int](List(2, 5, 3, 1, 6))
-        _ <- STArray.partition(arr, 0, 4, 2)
+        arr <- STArray.fromList[S, Int](List(2, 5, 3, 1, 6, 1, 7, 11, -1, -23, 4))
+        i <- STArray.partition(arr, 0, 10, 10)
         l <- arr.freeze
       } yield l
     }
-  }).foreach(println)
+  })
+    .foreach(println)
 
 }

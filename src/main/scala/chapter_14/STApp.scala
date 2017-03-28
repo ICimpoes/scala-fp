@@ -34,17 +34,23 @@ object STApp extends App {
 //      x6 <- a.read(6)
 //    } yield println(s"$x0 $x1 $x2 $x3 $x4 $x5 $x6")
 //  })
-implicit val _ = Debug(false)
+implicit val _ = Debug(true)
 
-  ST.runST(new RunnableST[List[Int]] {
-    override def apply[S]: ST[S, List[Int]] = {
-      for {
-        arr <- STArray.fromList[S, Int](List(2, 5, 3, 1, 6, 1, 7, 11, -1, -23, 4))
-        i <- STArray.partition(arr, 0, 10, 10)
-        l <- arr.freeze
-      } yield l
-    }
-  })
-    .foreach(println)
+//  ST.runST(new RunnableST[List[Int]] {
+//    override def apply[S]: ST[S, List[Int]] = {
+//      for {
+//        arr <- STArray.fromList[S, Int](List(2, 5, 3, 1, 6, 1, 7, 11, -1, -23, 4))
+//        i <- STArray.partition(arr, 0, 10, 10)
+//        l <- arr.freeze
+//      } yield l
+//    }
+//  })
+//    .foreach(println)
+
+
+  val l = List(-1, 1, 2, 2, 3, 4, 5, -1, 0, 0)
+
+    println(STArray.quicksort(l))
+    println(STArray.quicksort(l) == l.sorted)
 
 }

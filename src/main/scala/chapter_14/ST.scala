@@ -92,7 +92,7 @@ object Util {
 
   case class Debug(debug: Boolean)
 
-  def noop[S] = ST[S,Unit](())
+  def noop[S] = ST[S, Unit](())
 
   def debug(any: Any)(implicit d: Debug) = if (d.debug) println(any)
 
@@ -132,5 +132,26 @@ object STArray {
       _ <- arr.swap(r, a)
     } yield a
   }
+
+  def qs[S](a: STArray[S, Int], l: Int, r: Int)(implicit d: Debug): ST[S, Unit] = {
+    if (r <= l) noop[S]
+    else for {
+      piv <- partition(a, l, r, (l + r) / 2)
+      _ = debug(s"piv = $piv")
+      _ <- qs(a, l, piv - 1)
+      _ <- qs(a, piv + 1, r)
+    } yield ()
+  }
+
+  def quicksort(xs: List[Int])(implicit d: Debug): List[Int] =
+    if (xs.isEmpty) xs
+    else ST.runST(new RunnableST[List[Int]] {
+      def apply[S] = for {
+        arr <- STArray.fromList(xs)
+        size <- arr.size
+        _ <- qs(arr, 0, size - 1)
+        sorted <- arr.freeze
+      } yield sorted
+    })
 
 }

@@ -2,6 +2,7 @@ package chapter_14
 
 import chapter_14.Util._
 
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
 sealed trait ST[S, A] {
@@ -154,4 +155,31 @@ object STArray {
       } yield sorted
     })
 
+}
+
+sealed abstract class STMap[S, K, V] {
+
+  protected def value: mutable.Map[K, V]
+
+  def size: ST[S, Int] = ST(value.size)
+
+  def apply(k: K): ST[S, V] = ST(value(k))
+
+  def get(k: K): ST[S, Option[V]] = ST(value.get(k))
+
+  def +=(k: K, v: V): ST[S, Unit] = ST(value.update(k, v))
+
+  def -=(k: K): ST[S, Unit] = ST(value -= k)
+
+  def contains(k: K): ST[S, Boolean] = ST(value.contains(k))
+}
+
+object STMap {
+  def empty[S, K, V]: ST[S, STMap[S, K, V]] = ST(new STMap[S, K, V] {
+    val value = mutable.HashMap.empty[K, V]
+  })
+
+  def fromMap[S, K, V](m: Map[K, V]): ST[S, STMap[S, K, V]] = ST(new STMap[S, K, V] {
+    val value = (mutable.HashMap.newBuilder[K, V] ++= m).result
+  })
 }

@@ -172,6 +172,8 @@ sealed abstract class STMap[S, K, V] {
   def -=(k: K): ST[S, Unit] = ST(value -= k)
 
   def contains(k: K): ST[S, Boolean] = ST(value.contains(k))
+
+  def freeze: ST[S, Map[K, V]] = ST(value.toMap)
 }
 
 object STMap {

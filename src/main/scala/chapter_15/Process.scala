@@ -52,4 +52,25 @@ object Process {
       case _ => Halt()
     }.repeat
 
+  def sum: Process[Double, Double] = {
+    def go(acc: Double): Process[Double, Double] =
+      Await {
+        case Some(d) => Emit(d + acc, go(d + acc))
+        case None => Halt()
+      }
+    go(0.0)
+  }
+
+  def take[I](n: Int): Process[I, I] = {
+    def go(i: Int): Process[I, I] = {
+      if (n <= i) Halt()
+      else
+        Await {
+          case Some(a) => Emit(a, go(i + 1))
+          case None => Halt()
+        }
+    }
+    go(0)
+  }
+
 }

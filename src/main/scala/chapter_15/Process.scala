@@ -62,15 +62,35 @@ object Process {
   }
 
   def take[I](n: Int): Process[I, I] = {
-    def go(i: Int): Process[I, I] = {
-      if (n <= i) Halt()
-      else
-        Await {
-          case Some(a) => Emit(a, go(i + 1))
-          case None => Halt()
-        }
+    if (n <= 0) Halt()
+    else
+      Await {
+        case Some(a) => Emit(a, take(n - 1))
+        case None => Halt()
+      }
+  }
+
+  def drop[I](n: Int): Process[I, I] = {
+    Await {
+      case Some(a) if n <= 0 => Emit(a, drop(n))
+      case Some(_) => drop(n - 1)
+      case None => Halt()
     }
-    go(0)
+  }
+
+  def takeWhile[I](f: I => Boolean): Process[I, I] = {
+    Await {
+      case Some(a) if f(a) => Emit(a, takeWhile(f))
+      case _ => Halt()
+    }
+  }
+
+  def dropWhile[I](f: I => Boolean): Process[I, I] = {
+    Await {
+      case Some(a) if !f(a) => Emit(a, dropWhile(_ => false))
+      case Some(_) => dropWhile(f)
+      case _ => Halt()
+    }
   }
 
 }

@@ -31,4 +31,22 @@ class ProcessSpec extends FlatSpec with Matchers  {
     take(0)(stream).toList shouldBe Nil
   }
 
+  "Process.drop" should "drop first n elements" in {
+    drop(4)(stream).toList shouldBe stream.drop(4).toList
+    drop(2)(stream).toList shouldBe stream.drop(2).toList
+    drop(0)(stream).toList shouldBe stream.drop(0).toList
+  }
+
+  "Process.takeWhile" should "take elements while f is true" in {
+    takeWhile[Int](_ < 3)(stream).toList shouldBe stream.takeWhile(_ < 3).toList
+    takeWhile[Int](_ => true)(stream).toList shouldBe stream.toList
+    takeWhile[Int](_ => false)(stream).toList shouldBe Nil
+  }
+
+  "Process.dropWhile" should "drop elements while f is true" in {
+    dropWhile[Int](_ < 3)(stream).toList shouldBe stream.dropWhile(_ < 3).toList
+    dropWhile[Int](_ => true)(stream).toList shouldBe Nil
+    dropWhile[Int](_ => false)(stream).toList shouldBe stream.toList
+  }
+
 }

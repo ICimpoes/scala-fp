@@ -38,6 +38,11 @@ case class Halt[I, O]() extends Process[I, O]
 
 object Process {
 
+  def await[I, O](f: I => Process[I, O], fallback: Process[I, O] = Halt[I, O]()) = Await[I, O] {
+    case Some(i) => f(i)
+    case _ => fallback
+  }
+
   def liftOne[I, O](f: I => O): Process[I, O] =
     Await {
       case Some(i) => Emit[I, O](f(i))
@@ -47,50 +52,51 @@ object Process {
   def lift[I, O](f: I => O): Process[I, O] = liftOne(f).repeat
 
   def filter[I](p: I => Boolean): Process[I, I] =
-    Await[I, I] {
-      case Some(i) if p(i) => Emit(i)
-      case _ => Halt()
-    }.repeat
+    await[I, I](i => if (p(i)) Emit(i) else Halt()).repeat
 
   def sum: Process[Double, Double] = {
     def go(acc: Double): Process[Double, Double] =
-      Await {
-        case Some(d) => Emit(d + acc, go(d + acc))
-        case None => Halt()
-      }
+      await(d => Emit(d + acc, go(d + acc)))
     go(0.0)
   }
 
   def take[I](n: Int): Process[I, I] = {
     if (n <= 0) Halt()
-    else
-      Await {
-        case Some(a) => Emit(a, take(n - 1))
-        case None => Halt()
-      }
+    else await(a => Emit(a, take(n - 1)))
   }
 
   def drop[I](n: Int): Process[I, I] = {
-    Await {
-      case Some(a) if n <= 0 => Emit(a, drop(n))
-      case Some(_) => drop(n - 1)
-      case None => Halt()
+    await { a =>
+      if (n <= 0) Emit(a, drop(n))
+      else drop(n - 1)
     }
   }
 
   def takeWhile[I](f: I => Boolean): Process[I, I] = {
-    Await {
-      case Some(a) if f(a) => Emit(a, takeWhile(f))
-      case _ => Halt()
+    await { a =>
+      if (f(a)) Emit(a, takeWhile(f))
+      else Halt()
     }
   }
 
   def dropWhile[I](f: I => Boolean): Process[I, I] = {
-    Await {
-      case Some(a) if !f(a) => Emit(a, dropWhile(_ => false))
-      case Some(_) => dropWhile(f)
-      case _ => Halt()
+    await { a =>
+      if (!f(a)) Emit(a, dropWhile(_ => false))
+      else dropWhile(f)
     }
   }
+
+  def count[I]: Process[I, Int] = {
+    def go(cnt: Int): Process[I, Int] =
+      await(d => Emit(cnt, go(cnt + 1)), Emit(cnt))
+    go(0)
+  }
+
+  def mean: Process[Double, Double] = {
+    def go(cnt: Int, sum: Double): Process[Double, Double] =
+      await(d => Emit((sum + d) / (cnt + 1), go(cnt + 1, sum + d)))
+    go(0, 0)
+  }
+
 
 }

@@ -6,6 +6,7 @@ import chapter_15.Process._
 class ProcessSpec extends FlatSpec with Matchers  {
 
   val stream = Stream(1, 2, 3, 4, 5, 6)
+  val dStream = Stream(1.0, 2.6, 2.4, 0.4, 0.6, 0.2)
 
   "Process.liftOne" should "lift func to Process for 1 element" in {
     liftOne[Int, String](_.toString)(stream).toList shouldBe List("1")
@@ -47,6 +48,16 @@ class ProcessSpec extends FlatSpec with Matchers  {
     dropWhile[Int](_ < 3)(stream).toList shouldBe stream.dropWhile(_ < 3).toList
     dropWhile[Int](_ => true)(stream).toList shouldBe Nil
     dropWhile[Int](_ => false)(stream).toList shouldBe stream.toList
+  }
+
+  "Process.count" should "count elements in the Stream" in {
+    count[Int](stream.take(2).reverse).toList shouldBe List(0, 1, 2)
+    count[Int](Stream.empty).toList shouldBe List(0)
+    count[Int](stream.reverse).toList shouldBe (0 to stream.size).toList
+  }
+
+  "Process.mean" should "calculate mean of the Stream" in {
+    mean(dStream).toList shouldBe List(1.0, 1.8, 2.0, 1.6, 1.4, 1.2)
   }
 
 }

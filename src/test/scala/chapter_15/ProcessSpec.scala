@@ -25,6 +25,7 @@ class ProcessSpec extends FlatSpec with Matchers  {
 
   "Process.sum" should "accumulate sum of elements" in {
     sum(stream.map(_.toDouble)).toList shouldBe List(1.0, 3.0, 6.0, 10.0, 15.0, 21.0)
+    sum_2(stream.map(_.toDouble)).toList shouldBe List(1.0, 3.0, 6.0, 10.0, 15.0, 21.0)
   }
 
   "Process.take" should "process first n elements" in {
@@ -54,6 +55,14 @@ class ProcessSpec extends FlatSpec with Matchers  {
     count[Int](stream.take(2).reverse).toList shouldBe List(0, 1, 2)
     count[Int](Stream.empty).toList shouldBe List(0)
     count[Int](stream.reverse).toList shouldBe (0 to stream.size).toList
+
+    count_2[Int](stream.take(2).reverse).toList shouldBe List(1, 2)
+    count_2[Int](Stream.empty).toList shouldBe Nil
+    count_2[Int](stream.reverse).toList shouldBe (1 to stream.size).toList
+
+//    count_3[Int](stream.take(2).reverse).toList shouldBe List(1, 2)
+//    count_3[Int](Stream.empty).toList shouldBe Nil
+//    count_3[Int](stream.reverse).toList shouldBe (1 to stream.size).toList
   }
 
   "Process.mean" should "calculate mean of the Stream" in {

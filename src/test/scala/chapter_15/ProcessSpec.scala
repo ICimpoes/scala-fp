@@ -3,7 +3,7 @@ package chapter_15
 import org.scalatest.{FlatSpec, Matchers}
 import chapter_15.Process._
 
-class ProcessSpec extends FlatSpec with Matchers  {
+class ProcessSpec extends FlatSpec with Matchers {
 
   val stream = Stream(1, 2, 3, 4, 5, 6)
   val dStream = Stream(1.0, 2.6, 2.4, 0.4, 0.6, 0.2)
@@ -60,13 +60,20 @@ class ProcessSpec extends FlatSpec with Matchers  {
     count_2[Int](Stream.empty).toList shouldBe Nil
     count_2[Int](stream.reverse).toList shouldBe (1 to stream.size).toList
 
-//    count_3[Int](stream.take(2).reverse).toList shouldBe List(1, 2)
-//    count_3[Int](Stream.empty).toList shouldBe Nil
-//    count_3[Int](stream.reverse).toList shouldBe (1 to stream.size).toList
+    count_3[Int](stream.take(2).reverse).toList shouldBe List(1, 2)
+    count_3[Int](Stream.empty).toList shouldBe Nil
+    count_3[Int](stream.reverse).toList shouldBe (1 to stream.size).toList
   }
 
   "Process.mean" should "calculate mean of the Stream" in {
     mean(dStream).toList shouldBe List(1.0, 1.8, 2.0, 1.6, 1.4, 1.2)
   }
 
+  "Process.evenPlus5" should "filter even and increment by 5" in {
+    evenPlus5(stream).toList shouldBe List(7, 9, 11)
+  }
+
+  "Process.map" should "map a process using given function" in {
+    evenPlus5(stream).map(_.toString).toList shouldBe List("7", "9", "11")
+  }
 }

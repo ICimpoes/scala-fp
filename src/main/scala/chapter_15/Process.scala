@@ -25,15 +25,17 @@ sealed trait Process[I, O] {
     go(this)
   }
 
-//  def |>[O2](p2: Process[O, O2]): Process[I, O2] = this -> p2 match {
-//    case (Halt(), _) => Halt()
-//    case (_, Halt()) => Halt()
-//    case (a, Emit(o, t2)) => emit[I, O2](o, a |> t2)
-//    case (Await(fi), a) => Await[I, O2](o => fi(o) |> a)
-//    case (Emit(i, t), Await(fo)) => t |> fo(Some(i))
-//    case (_, Await(fo)) => this |> fo(None)
-//  }
+  def |>[O2](p2: Process[O, O2]): Process[I, O2] = p2 match {
+    case Halt() => Halt()
+    case Emit(h, t) => Emit(h, this |> t)
+    case Await(f) => this match {
+      case Halt() => this |> f(None)
+      case Emit(h, t) => t |> f(Some(h))
+      case Await(f2) => Await[I, O2](i => f2(i) |> p2)
+    }
+  }
 
+  def map[O2](f: O => O2): Process[I, O2] = this |> lift(f)
 }
 
 case class Emit[I, O](head: O, tail: Process[I, O] = Halt[I, O]()) extends Process[I, O]
@@ -118,7 +120,9 @@ object Process {
   def count_2[I]: Process[I, Int] =
     loop(0)((_, acc) => (acc + 1, acc + 1))
 
-//  def count_3[I]: Process[I, Int] =
-//    lift[I, Double](_ => 0.0) |> sum |> lift(_.toInt)
+  def count_3[I]: Process[I, Int] =
+    lift[I, Double](_ => 1.0) |> sum |> lift(_.toInt)
+
+  val evenPlus5 = filter[Int](_ % 2 == 0) |> lift(_ + 5)
 
 }

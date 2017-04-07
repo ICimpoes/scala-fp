@@ -36,6 +36,18 @@ sealed trait Process[I, O] {
   }
 
   def map[O2](f: O => O2): Process[I, O2] = this |> lift(f)
+
+  def ++(p: => Process[I, O]): Process[I, O] = this match {
+    case Halt() => p
+    case Emit(h, t) => Emit(h, t ++ p)
+    case Await(f) => Await(f.andThen(_ ++ p))
+  }
+
+  def flatMap[O2](f: O => Process[I, O2]): Process[I, O2] = this match {
+    case Halt() => Halt()
+    case Emit(h, t) => f(h) ++ t.flatMap(f)
+    case Await(recv) => Await(recv(_).flatMap(f))
+  }
 }
 
 case class Emit[I, O](head: O, tail: Process[I, O] = Halt[I, O]()) extends Process[I, O]

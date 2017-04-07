@@ -74,6 +74,16 @@ class ProcessSpec extends FlatSpec with Matchers {
   }
 
   "Process.map" should "map a process using given function" in {
-    evenPlus5(stream).map(_.toString).toList shouldBe List("7", "9", "11")
+    evenPlus5.map(_.toString)(stream).toList shouldBe List("7", "9", "11")
+  }
+
+  "Process.++" should "append 2 processes" in {
+    liftOne((_: Int) + 5).++(filter(_ % 3 == 0))(stream).toList shouldBe List(6, 3, 6)
+  }
+
+  "Process.flatMap" should "flatMap over process" in {
+//    evenPlus5.flatMap(i => lift(o => s"$i - $o"))(stream).toList shouldBe List(6, 3, 6)
+//    evenPlus5.flatMap(s => count.map(_ + s))(stream).toList shouldBe List(6, 3, 6)
+//    evenPlus5.flatMap(i => filter[Int](_ => i % 7 == 0).map(j => i -> j))(stream).toList shouldBe List(6, 3, 6)
   }
 }

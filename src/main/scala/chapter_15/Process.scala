@@ -1,5 +1,6 @@
 package chapter_15
 
+import chapter_11.Monad
 import chapter_15.Process._
 
 sealed trait Process[I, O] {
@@ -48,6 +49,16 @@ sealed trait Process[I, O] {
     case Emit(h, t) => f(h) ++ t.flatMap(f)
     case Await(recv) => Await(recv(_).flatMap(f))
   }
+
+  def zip[O2](p2: Process[I, O2]): Process[I, (O, O2)] = this -> p2 match {
+    case (Halt(), _) => Halt()
+    case (_, Halt()) => Halt()
+    case (Emit(h1, t1), Emit(h2, t2)) => Emit((h1, h2), t1.zip(t2))
+    case (Await(f1), _) => Await[I, (O, O2)](o => f1(o).zip(feed(o)(p2)))
+    case (_, Await(f1)) => Await[I, (O, O2)](o => feed(o)(this).zip(f1(o)))
+  }
+
+  def zipWithIndex: Process[I, (O, Int)] = this zip count
 }
 
 case class Emit[I, O](head: O, tail: Process[I, O] = Halt[I, O]()) extends Process[I, O]
@@ -136,5 +147,20 @@ object Process {
     lift[I, Double](_ => 1.0) |> sum |> lift(_.toInt)
 
   val evenPlus5 = filter[Int](_ % 2 == 0) |> lift(_ + 5)
+
+  def monad[I]: Monad[({type f[x] = Process[I, x]})#f] =
+    new Monad[({type f[x] = Process[I, x]})#f] {
+      def unit[O](o: => O): Process[I, O] =
+        emit[I, O](o)
+
+      def flatMap[O, O2](p: Process[I, O])(f: O => Process[I, O2]): Process[I, O2] =
+        p.flatMap(f)
+    }
+
+  def feed[A, B](a: Option[A])(p: Process[A, B]): Process[A, B] = p match {
+    case Halt() => Halt()
+    case Emit(h, t) => Emit(h, feed(a)(t))
+    case Await(r) => r(a)
+  }
 
 }

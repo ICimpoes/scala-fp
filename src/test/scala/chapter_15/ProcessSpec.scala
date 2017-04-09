@@ -81,9 +81,11 @@ class ProcessSpec extends FlatSpec with Matchers {
     liftOne((_: Int) + 5).++(filter(_ % 3 == 0))(stream).toList shouldBe List(6, 3, 6)
   }
 
-  "Process.flatMap" should "flatMap over process" in {
-//    evenPlus5.flatMap(i => lift(o => s"$i - $o"))(stream).toList shouldBe List(6, 3, 6)
-//    evenPlus5.flatMap(s => count.map(_ + s))(stream).toList shouldBe List(6, 3, 6)
-//    evenPlus5.flatMap(i => filter[Int](_ => i % 7 == 0).map(j => i -> j))(stream).toList shouldBe List(6, 3, 6)
+  "Process.zipWithIndex" should "zip process with index" in {
+    evenPlus5.zipWithIndex(stream).toList shouldBe List(7 -> 0, 9 -> 1, 11 -> 2)
+    lift[Int, Int](identity).zipWithIndex(stream).toList shouldBe stream.toList.zipWithIndex
+  }
+  "Process.zip" should "zip two processes" in {
+    lift(identity[Int]).zip(lift(_.toString))(stream).toList shouldBe stream.toList.map(x => x -> x.toString)
   }
 }

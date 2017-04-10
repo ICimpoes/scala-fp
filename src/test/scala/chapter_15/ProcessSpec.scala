@@ -90,7 +90,7 @@ class ProcessSpec extends FlatSpec with Matchers {
   "Process.zip" should "zip two processes" in {
     lift(identity[Int]).zip(lift(_.toString))(stream).toList shouldBe stream.toList.map(x => x -> x.toString)
   }
-  "Process.exists" should "exists" in {
+  "Process.exists" should "should return true if condition is true" in {
     exists[Int](_ % 2 == 0)(stream).toList shouldBe List(false, true, true, true, true, true)
     exists_2[Int](_ % 2 == 0)(stream).toList shouldBe List(true)
     exists_2[Int](_ => false)(stream).toList shouldBe List(false)

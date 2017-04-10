@@ -67,6 +67,8 @@ class ProcessSpec extends FlatSpec with Matchers {
 
   "Process.mean" should "calculate mean of the Stream" in {
     mean(dStream).toList shouldBe List(1.0, 1.8, 2.0, 1.6, 1.4, 1.2)
+
+    mean_2(dStream).toList shouldBe List(1.0, 1.8, 2.0, 1.6, 1.4, 1.2)
   }
 
   "Process.evenPlus5" should "filter even and increment by 5" in {
@@ -87,5 +89,10 @@ class ProcessSpec extends FlatSpec with Matchers {
   }
   "Process.zip" should "zip two processes" in {
     lift(identity[Int]).zip(lift(_.toString))(stream).toList shouldBe stream.toList.map(x => x -> x.toString)
+  }
+  "Process.exists" should "exists" in {
+    exists[Int](_ % 2 == 0)(stream).toList shouldBe List(false, true, true, true, true, true)
+    exists_2[Int](_ % 2 == 0)(stream).toList shouldBe List(true)
+    exists_2[Int](_ => false)(stream).toList shouldBe List(false)
   }
 }

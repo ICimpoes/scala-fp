@@ -59,6 +59,15 @@ sealed trait Process[I, O] {
   }
 
   def zipWithIndex: Process[I, (O, Int)] = this zip count
+
+  def orElse(p: Process[I, O]): Process[I, O] = this match {
+    case Halt() => p
+    case Await(f) => Await {
+      case None => p
+      case i => f(i)
+    }
+    case _ => this
+  }
 }
 
 case class Emit[I, O](head: O, tail: Process[I, O] = Halt[I, O]()) extends Process[I, O]
@@ -162,5 +171,13 @@ object Process {
     case Emit(h, t) => Emit(h, feed(a)(t))
     case Await(r) => r(a)
   }
+
+  def echo[I]: Process[I,I] = await(i => emit(i))
+
+  def mean_2: Process[Double, Double] = count_2[Double] zip sum map (x => x._2 / x._1)
+
+  def exists[I](f: I => Boolean): Process[I, Boolean] = lift(f) |> loop(false)((i, s) => (i || s) -> (s || i))
+
+  def exists_2[I](f: I => Boolean): Process[I, Boolean] = lift(f) |> dropWhile(!_) |> echo.orElse(emit(false))
 
 }

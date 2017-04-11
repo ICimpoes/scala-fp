@@ -1,6 +1,7 @@
 package chapter_15
 
 import chapter_11.Monad
+import chapter_13.IO
 import chapter_15.Process._
 
 sealed trait Process[I, O] {
@@ -172,12 +173,33 @@ object Process {
     case Await(r) => r(a)
   }
 
-  def echo[I]: Process[I,I] = await(i => emit(i))
+  def echo[I]: Process[I, I] = await(i => emit(i))
 
   def mean_2: Process[Double, Double] = count_2[Double] zip sum map (x => x._2 / x._1)
 
   def exists[I](f: I => Boolean): Process[I, Boolean] = lift(f) |> loop(false)((i, s) => (i || s) -> (s || i))
 
   def exists_2[I](f: I => Boolean): Process[I, Boolean] = lift(f) |> dropWhile(!_) |> echo.orElse(emit(false))
+
+  def processFile[A, B](f: java.io.File,
+                        p: Process[String, A],
+                        z: B)(g: (B, A) => B): IO[B] = IO {
+    @annotation.tailrec
+    def go(ss: Iterator[String], cur: Process[String, A], acc: B): B =
+      cur match {
+        case Halt() => acc
+        case Await(recv) =>
+          val next = if (ss.hasNext) recv(Some(ss.next))
+          else recv(None)
+          go(ss, next, acc)
+        case Emit(h, t) => go(ss, t, g(acc, h))
+      }
+    val s = io.Source.fromFile(f)
+    try go(s.getLines, p, z)
+    finally s.close
+  }
+
+  def toCelsius(fahrenheit: Double): Double =
+    (5.0 / 9.0) * (fahrenheit - 32.0)
 
 }

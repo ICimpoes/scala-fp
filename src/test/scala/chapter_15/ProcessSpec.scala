@@ -1,7 +1,11 @@
 package chapter_15
 
-import org.scalatest.{FlatSpec, Matchers}
+import java.io.{File, PrintWriter}
+
 import chapter_15.Process._
+import org.scalatest.{FlatSpec, Matchers}
+
+import scala.io.Source
 
 class ProcessSpec extends FlatSpec with Matchers {
 
@@ -95,4 +99,28 @@ class ProcessSpec extends FlatSpec with Matchers {
     exists_2[Int](_ % 2 == 0)(stream).toList shouldBe List(true)
     exists_2[Int](_ => false)(stream).toList shouldBe List(false)
   }
+  "Process.toCelsius" should "read lines from file filter, convert to celsius and write to other file" in {
+    val celsius = List("1", "2.0", " ", "3.0", "22.2", "#XXX")
+    //----------------------
+    val file = new File("target/tst.dat")
+    file.deleteOnExit()
+    file.createNewFile()
+    val p = new PrintWriter(file)
+    celsius.foreach(p.println)
+    p.close()
+    //----------------------
+    val resultFile = new File("target/result.dat")
+    resultFile.createNewFile()
+    resultFile.deleteOnExit()
+    //----------------------
+    processFile(file, filter[String](_.trim.nonEmpty) |> filter(!_.startsWith("#")) |> lift(x => toCelsius(x.toDouble)), {
+      new PrintWriter(resultFile)
+    }) { (p, a) =>
+      p.println(a)
+      p
+    }.run.close()
+    //----------------------
+    Source.fromFile(resultFile).getLines().toList shouldBe celsius.filter(s => s.trim.nonEmpty && !s.startsWith("#")).map(x => toCelsius(x.toDouble).toString)
+  }
+
 }

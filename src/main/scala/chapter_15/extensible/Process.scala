@@ -38,6 +38,26 @@ trait Process[F[_], O] {
         Await(req, recv andThen (_ flatMap f))
     }
 
+  def onComplete(p: => Process[F, O]): Process[F, O] =
+    this.onHalt {
+      case End => p.asFinalizer
+      case err => p.asFinalizer ++ Halt(err)
+    }
+
+  def asFinalizer: Process[F, O] = this match {
+    case Emit(h, t) => Emit(h, t.asFinalizer)
+    case Halt(e) => Halt(e)
+    case Await(req, recv) => await(req) {
+      case Left(Kill) => this.asFinalizer
+      case x => recv(x)
+    }
+  }
+
+  def drain[O2]: Process[F, O2] = this match {
+    case Halt(err) => Halt(err)
+    case Emit(h, t) => t.drain
+    case Await(r, f) => await(r) { x => f(x).drain }
+  }
 }
 
 object Process {
@@ -103,4 +123,13 @@ object Process {
       case Left(e) => Halt(e)
     }
 
+  def resource[R, O](acquire: IO[R])(use: R => Process[IO, O])(release: R => Process[IO, O]): Process[IO, O] =
+    eval(acquire).flatMap(r => use(r).onComplete(release(r)))
+
+  def eval[F[_], A](a: F[A]): Process[F, A] = await(a) {
+    case Right(o) => Emit(o, Halt(End))
+    case Left(err) => Halt(err)
+  }
+
+  def eval_[F[_], A, B](a: F[A]): Process[F, B] = eval(a).drain
 }

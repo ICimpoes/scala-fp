@@ -58,6 +58,9 @@ trait Process[F[_], O] {
     case Emit(h, t) => t.drain
     case Await(r, f) => await(r) { x => f(x).drain }
   }
+
+  def repeat: Process[F, O] = this ++ this.repeat
+
 }
 
 object Process {
@@ -76,6 +79,9 @@ object Process {
 
   def await[F[_], A, O](req: F[A])(recv: Either[Throwable, A] => Process[F, O]): Process[F, O] =
     Await(req, recv)
+
+  def emit[F[_], O](head: O, tail: Process[F, O] = Halt[F, O](End)): Process[F, O] =
+    Emit(head, tail)
 
   case class Await[F[_], A, O](req: F[A], recv: Either[Throwable, A] => Process[F, O])
     extends Process[F, O]
@@ -132,4 +138,17 @@ object Process {
   }
 
   def eval_[F[_], A, B](a: F[A]): Process[F, B] = eval(a).drain
+
+  def lines(filename: String): Process[IO, String] = resource(IO(io.Source.fromFile(filename))) {
+    src =>
+      lazy val iter = src.getLines // a stateful iterator
+      def step = if (iter.hasNext) Some(iter.next) else None
+      lazy val lines: Process[IO, String] = eval(IO(step)).flatMap {
+        case None => Halt(End)
+        case Some(line) => Emit(line, lines)
+      }
+      lines
+  } { src => eval_(IO(src.close)) }
+
+
 }

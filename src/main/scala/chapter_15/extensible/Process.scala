@@ -4,6 +4,7 @@ import chapter_11.Monad
 import chapter_11.Monad.Ops._
 import chapter_13.IO
 import chapter_15.extensible.Process._
+import chapter_15.extensible.Process1.Process1
 
 trait Process[F[_], O] {
 
@@ -53,13 +54,39 @@ trait Process[F[_], O] {
     }
   }
 
-  def drain[O2]: Process[F, O2] = this match {
+  final def drain[O2]: Process[F, O2] = this match {
     case Halt(err) => Halt(err)
     case Emit(h, t) => t.drain
     case Await(r, f) => await(r) { x => f(x).drain }
   }
 
   def repeat: Process[F, O] = this ++ this.repeat
+
+  def |>[O2](p2: Process1[O, O2]): Process[F, O2] = p2 match {
+    case Halt(e) => this.kill onHalt (e2 => Halt(e) ++ Halt(e2))
+    case Emit(h, t) => Emit(h, this |> t)
+    case Await(req, recv) => this match {
+      case Halt(err) => Halt(err) |> recv(Left(err))
+      case Emit(h, t) => t |> Try(recv(Right(h)))
+      case Await(req0, recv0) => await(req0)(recv0 andThen (_ |> p2))
+    }
+  }
+
+  def pipe[O2](p2: Process1[O, O2]): Process[F, O2] =
+    this |> p2
+
+  @annotation.tailrec
+  final def kill[O2]: Process[F, O2] = this match {
+    case Await(req, recv) => recv(Left(Kill)).drain.onHalt {
+      case Kill => Halt(End)
+      case e => Halt(e)
+    }
+    case Halt(e) => Halt(e)
+    case Emit(h, t) => t.kill
+  }
+
+  def filter(f: O => Boolean): Process[F,O] =
+    this |> Process1.filter(f)
 
 }
 
@@ -142,7 +169,7 @@ object Process {
   def lines(filename: String): Process[IO, String] = resource(IO(io.Source.fromFile(filename))) {
     src =>
       lazy val iter = src.getLines // a stateful iterator
-      def step = if (iter.hasNext) Some(iter.next) else None
+    def step = if (iter.hasNext) Some(iter.next) else None
       lazy val lines: Process[IO, String] = eval(IO(step)).flatMap {
         case None => Halt(End)
         case Some(line) => Emit(line, lines)

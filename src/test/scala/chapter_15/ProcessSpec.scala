@@ -121,6 +121,10 @@ class ProcessSpec extends FlatSpec with Matchers {
     }.run.close()
     //----------------------
     Source.fromFile(resultFile).getLines().toList shouldBe celsius.filter(s => s.trim.nonEmpty && !s.startsWith("#")).map(x => toCelsius(x.toDouble).toString)
+
+
+
+
   }
 
 }

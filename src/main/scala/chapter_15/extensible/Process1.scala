@@ -34,4 +34,7 @@ object Process1 {
   def filter[I](f: I => Boolean): Process1[I, I] =
     await1[I, I](i => if (f(i)) emit(i) else halt1) repeat
 
+  def id[I]: Process1[I, I] =
+    await1[I, I](i => emit1(i, id))
+
 }

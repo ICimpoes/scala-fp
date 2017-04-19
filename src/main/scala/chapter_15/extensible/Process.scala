@@ -1,10 +1,13 @@
 package chapter_15.extensible
 
+import java.io.FileWriter
+
 import chapter_11.Monad
 import chapter_11.Monad.Ops._
 import chapter_13.IO
 import chapter_15.extensible.Process._
 import chapter_15.extensible.Process1.Process1
+import chapter_15.extensible.T.Tee
 
 trait Process[F[_], O] {
 
@@ -75,6 +78,9 @@ trait Process[F[_], O] {
   def pipe[O2](p2: Process1[O, O2]): Process[F, O2] =
     this |> p2
 
+  def map[O2](f: O => O2): Process[F, O2] =
+    this |> Process1.lift(f)
+
   @annotation.tailrec
   final def kill[O2]: Process[F, O2] = this match {
     case Await(req, recv) => recv(Left(Kill)).drain.onHalt {
@@ -85,8 +91,37 @@ trait Process[F[_], O] {
     case Emit(h, t) => t.kill
   }
 
-  def filter(f: O => Boolean): Process[F,O] =
+  def filter(f: O => Boolean): Process[F, O] =
     this |> Process1.filter(f)
+
+  def tee[O2, O3](p2: Process[F, O2])(t: Tee[O, O2, O3]): Process[F, O3] =
+    t match {
+      case Halt(e) => this.kill onComplete p2.kill onComplete Halt(e)
+      case Emit(h, t) => Emit(h, (this tee p2) (t))
+      case Await(side, recv) => side.get match {
+        case Left(isO) => this match {
+          case Halt(e) => p2.kill onComplete Halt(e)
+          case Emit(o, ot) => (ot tee p2) (Try(recv(Right(o))))
+          case Await(reqL, recvL) =>
+            await(reqL)(recvL andThen (this2 => this2.tee(p2)(t)))
+        }
+        case Right(isO2) => p2 match {
+          case Halt(e) => this.kill onComplete Halt(e)
+          case Emit(o2, ot) => this.tee(ot)(Try(recv(Right(o2))))
+          case Await(reqR, recvR) =>
+            await(reqR)(recvR andThen (p3 => this.tee(p3)(t)))
+        }
+      }
+    }
+
+  def zipWith[O2, O3](p2: Process[F, O2])(f: (O, O2) => O3): Process[F, O3] =
+    (this tee p2) (T.zipWith(f))
+
+  def zip[O2](p2: Process[F, O2]): Process[F, (O, O2)] =
+    zipWith(p2)((_, _))
+
+  def to[O2](sink: Sink[F, O]): Process[F, Unit] =
+    join((this zipWith sink) ((o, f) => f(o)))
 
 }
 
@@ -177,5 +212,29 @@ object Process {
       lines
   } { src => eval_(IO(src.close)) }
 
+  type Sink[F[_], O] = Process[F, O => Process[F, Unit]]
+
+  def fileW(file: String, append: Boolean = false): Sink[IO, String] =
+    resource[FileWriter, String => Process[IO, Unit]](IO(new FileWriter(file, append))) { w =>
+      constant(s => eval[IO, Unit](IO(w.write(s))))
+    }(w => eval_(IO(w.close)))
+
+  def constant[A](a: A): Process[IO, A] =
+    eval[IO, A](IO(a)).repeat
+
+  def join[F[_], O](p: Process[F, Process[F, O]]): Process[F, O] = p.flatMap(identity)
+
+  import Process1._
+
+  def intersperse[I](sep: I): Process1[I, I] =
+    await1[I, I](i => emit1(i) ++ id.flatMap(i => emit1(sep) ++ emit1(i)))
+
+  val converter: Process[IO, Unit] =
+    lines("fahrenheit.txt")
+      .filter(!_.startsWith("#"))
+      .map(line => chapter_15.Process.toCelsius(line.toDouble).toString)
+      .pipe(intersperse("\n"))
+      .to(fileW("celsius.txt"))
+      .drain
 
 }

@@ -115,7 +115,7 @@ trait Process[F[_], O] {
     }
 
   def zipWith[O2, O3](p2: Process[F, O2])(f: (O, O2) => O3): Process[F, O3] =
-    (this tee p2) (T.zipWith(f))
+    tee(p2)(T.zipWith(f))
 
   def zip[O2](p2: Process[F, O2]): Process[F, (O, O2)] =
     zipWith(p2)((_, _))
@@ -123,9 +123,14 @@ trait Process[F[_], O] {
   def to[O2](sink: Sink[F, O]): Process[F, Unit] =
     join((this zipWith sink) ((o, f) => f(o)))
 
+
+  def through[O2](p2: Process[F, O => Process[F, O2]]): Process[F, O2] =
+    join(zipWith(p2)((o, f) => f(o)))
 }
 
 object Process {
+
+  type Channel[F[_], I, O] = Process[F, I => Process[F, O]]
 
   trait MonadCatch[F[_]] extends Monad[F] {
     def attempt[A](a: F[A]): F[Either[Throwable, A]]
